@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arus Kusen & Batu Alam - Modern Financial OS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js CDN for interactive state management -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- Chart.js CDN for interactive visual graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Plus Jakarta Sans for a modern, premium SaaS look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    <!-- FontAwesome for beautiful icon rendering -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f4f7fa;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+        }
+        
+        /* --- SMOOTH ANIMATION UTILITIES --- */
+        html { scroll-behavior: smooth; }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* Delays for staggered animations */
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 150ms; }
+        .delay-300 { animation-delay: 200ms; }
+        .delay-400 { animation-delay: 250ms; }
+        .delay-500 { animation-delay: 300ms; }
+        /* ---------------------------------- */
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #invoice-print-area, #invoice-print-area * {
+                visibility: visible;
+            }
+            #invoice-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: #0f172a !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body x-data="appState()" x-init="initApp()" class="text-slate-800 flex flex-col md:flex-row relative">
+
+    <div x-show="notification.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+         class="fixed top-6 right-6 z-[100] max-w-sm w-full bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 p-4 flex items-start gap-3 no-print"
+         :class="notification.type === 'success' ? 'border-emerald-500' : (notification.type === 'error' ? 'border-rose-500' : 'border-indigo-500')"
+         style="display: none;">
+        <div class="text-xl shrink-0 mt-0.5">
+            <i :class="notification.type === 'success' ? 'fa-solid fa-circle-check text-emerald-500' : (notification.type === 'error' ? 'fa-solid fa-circle-xmark text-rose-500' : 'fa-solid fa-circle-info text-indigo-500')"></i>
+        </div>
+        <div class="flex-1">
+            <h3 class="font-bold text-sm text-slate-900" x-text="notification.type === 'success' ? 'Berhasil' : (notification.type === 'error' ? 'Peringatan' : 'Informasi')"></h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed font-medium" x-text="notification.message"></p>
+        </div>
+        <button @click="notification.show = false" class="text-slate-400 hover:text-slate-700 transition-colors shrink-0 p-1 rounded-lg hover:bg-slate-100">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <div x-show="confirmModal.show" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[90] p-4 no-print transition-opacity" style="display: none;">
+        <div @click.away="confirmModal.show = false" class="bg-white rounded-[24px] p-7 max-w-md w-full shadow-2xl space-y-6 transform transition-all">
+            <div class="flex flex-col items-center text-center gap-4">
+                <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-xl" x-text="confirmModal.title"> Konfirmasi</h3>
+                    <p class="text-sm text-slate-500 mt-2 leading-relaxed font-medium" x-text="confirmModal.message"></p>
+                </div>
+            </div>
+            <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
+                <button @click="confirmModal.show = false" class="w-full sm:w-auto px-5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all">Batal</button>
+                <button @click="executeConfirmAction()" class="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-500 hover:shadow-lg hover:shadow-rose-500/30 text-white text-sm font-bold rounded-xl transition-all">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="w-full md:w-64 bg-[#0B1120] text-slate-300 shrink-0 flex flex-col z-20 shadow-xl no-print min-h-screen">
+        <div class="p-6 border-b border-slate-800/50 flex items-center gap-4">
+            <div class="bg-white p-1 rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.1)] w-12 h-12 flex items-center justify-center overflow-hidden shrink-0">
+                <img src="Logo-01_2.png" alt="Arena Usaha" class="object-contain w-full h-full" onerror="this.src='https://placehold.co/100x100/2563eb/ffffff?text=AU'">
+            </div>
+            <div>
+                <h1 class="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-0.5">Arena Usaha</h1>
+                <h2 class="text-sm font-extrabold text-white leading-tight">Arus Kusen & Batu</h2>
+            </div>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-1.5 mt-2">
+            <button @click="currentTab = 'dashboard'" 
+                    :class="currentTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                    class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-semibold text-xs tracking-wide">
+                <i class="fa-solid fa-chart-pie w-5 text-center text-lg"></i>
+                Dashboard
+            </button>
+            
+            <button @click="currentTab = 'kas-masuk'" 
+                    :class="currentTab === 'kas-masuk' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                    class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-semibold text-xs tracking-wide">
+                <i class="fa-solid fa-arrow-down-long w-5 text-center text-lg" :class="currentTab === 'kas-masuk' ? 'text-white' : 'text-emerald-400'"></i>
+                Kas Masuk
+            </button>
+            
+            <button @click="currentTab = 'kas-keluar'" 
+                    :class="currentTab === 'kas-keluar' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                    class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-semibold text-xs tracking-wide">
+                <i class="fa-solid fa-arrow-up-long w-5 text-center text-lg" :class="currentTab === 'kas-keluar' ? 'text-white' : 'text-rose-400'"></i>
+                Kas Keluar
+            </button>
+            
+            <div class="pt-4 pb-2">
+                <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Aset & Dompet</p>
+            </div>
+            
+            <button @click="currentTab = 'keuangan-pribadi'" 
+                    :class="currentTab === 'keuangan-pribadi' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                    class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-semibold text-xs tracking-wide">
+                <i class="fa-solid fa-wallet w-5 text-center text-lg" :class="currentTab === 'keuangan-pribadi' ? 'text-white' : 'text-amber-400'"></i>
+                Keuangan Pribadi
+            </button>
+            
+            <div class="pt-4 pb-2">
+                <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Manajemen Invoice</p>
+            </div>
+            
+            <button @click="currentTab = 'invoice-baru'" 
+                    :class="currentTab === 'invoice-baru' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                    class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-semibold text-xs tracking-wide">
+                <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-lg" :class="currentTab === 'invoice-baru' ? 'text-white' : 'text-blue-400'"></i>
+                Buat Invoice Baru
+            </button>
+            
+            <button @click="currentTab = 'riwayat-invoice'" 
+                    :class="currentTab === 'riwayat-invoice' ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                    class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-semibold text-xs tracking-wide">
+                <i class="fa-solid fa-folder-open w-5 text-center text-lg"></i>
+                Riwayat & Data
+            </button>
+            
+            <div class="pt-4 pb-2">
+                <p class="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Sistem</p>
+            </div>
+
+            <button @click="currentTab = 'integrasi-gas'" 
+                    :class="currentTab === 'integrasi-gas' ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" 
+                    class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-semibold text-xs tracking-wide">
+                <i class="fa-solid fa-cloud w-5 text-center text-lg" :class="currentTab === 'integrasi-gas' ? 'text-white' : 'text-amber-400'"></i>
+                Database & Cloud
+            </button>
+        </nav>
+
+        <div class="p-5 bg-black/20 text-[10px] text-slate-500 flex flex-col gap-1.5 border-t border-slate-800/50 backdrop-blur-md">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full animate-pulse" :class="cloudUrl ? 'bg-emerald-500' : 'bg-amber-500'"></div>
+                <span class="font-bold text-slate-300" x-text="cloudUrl ? 'Sistem Cloud Aktif' : 'Mode Offline Lokal'"></span>
+            </div>
+            <span class="text-slate-500 font-medium">Versi Pembukuan v4.0</span>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-x-hidden flex flex-col min-h-screen relative no-print">
+        
+        <header class="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 h-[72px] flex items-center justify-between px-8 shrink-0 sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 md:hidden">
+                    <i class="fa-solid fa-bars"></i>
+                </div>
+                <span class="text-sm font-bold text-slate-800 hidden md:block">Arena Usaha Kusen & Batu Alam</span>
+            </div>
+            <div class="flex items-center gap-5">
+                <template x-if="cloudUrl">
+                    <button @click="pullFromCloud()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrows-rotate animate-spin" style="animation-duration: 3s;"></i> Sinkronisasi
+                    </button>
+                </template>
+                <div class="text-right hidden sm:block">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Keamanan Data</p>
+                    <p class="text-xs font-bold text-emerald-600 flex items-center gap-1.5 justify-end bg-emerald-50 px-2 py-0.5 rounded-full">
+                        <i class="fa-solid fa-shield-halved"></i> Terlindungi
+                    </p>
+                </div>
+                <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-blue-500 text-white font-bold rounded-full flex items-center justify-center text-sm shadow-md ring-4 ring-indigo-50">
+                    AU
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto space-y-8">
+
+            <!-- ================= TAB: DASHBOARD ================= -->
+            <div x-show="currentTab === 'dashboard'" 
+                 x-transition:enter="transition ease-out duration-500" 
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+                 class="space-y-8">
+                
+                <!-- Welcome Banner -->
+                <div class="animate-fade-in-up delay-100 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-[24px] p-8 text-white shadow-xl shadow-slate-900/10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute right-40 -bottom-20 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="relative z-10">
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Halo, Selamat Datang! 👋</h2>
+                        <p class="text-slate-300 text-sm mt-2 font-medium max-w-lg leading-relaxed">Kelola arus kas masuk/keluar, simpan pembayaran uang muka bertahap, serta cetak invoice berlogo Arena Usaha secara instan.</p>
+                    </div>
+                    <div class="relative z-10 w-full md:w-auto">
+                        <button @click="currentTab = 'invoice-baru'" class="w-full md:w-auto bg-indigo-500 hover:bg-indigo-400 text-white px-6 py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/30 transition-all duration-200 flex items-center justify-center gap-2 transform hover:-translate-y-0.5">
+                            <i class="fa-solid fa-plus"></i> Buat Invoice Baru
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-[20px] shadow-sm border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                        <h4 class="font-bold text-slate-900 text-sm">Mode Periode Analitik</h4>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Toggle Monthly / Yearly -->
+                        <div class="bg-slate-100 p-1 rounded-xl flex">
+                            <button @click="analyticsPeriod = 'yearly'; triggerChartUpdate()" 
+                                    :class="analyticsPeriod === 'yearly' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                    class="px-4 py-2 rounded-lg text-xs font-bold transition">
+                                Tahunan
+                            </button>
+                            <button @click="analyticsPeriod = 'monthly'; triggerChartUpdate()" 
+                                    :class="analyticsPeriod === 'monthly' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                    class="px-4 py-2 rounded-lg text-xs font-bold transition">
+                                Bulanan
+                            </button>
+                        </div>
+                        
+                        <!-- Dropdown Bulan (Only visible if Bulanan selected) -->
+                        <div x-show="analyticsPeriod === 'monthly'" x-transition class="flex items-center">
+                            <select x-model="analyticsMonth" @change="triggerChartUpdate()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500">
+                                <option value="0">Januari</option>
+                                <option value="1">Februari</option>
+                                <option value="2">Maret</option>
+                                <option value="3">April</option>
+                                <option value="4">Mei</option>
+                                <option value="5">Juni</option>
+                                <option value="6">Juli</option>
+                                <option value="7">Agustus</option>
+                                <option value="8">September</option>
+                                <option value="9">Oktober</option>
+                                <option value="10">November</option>
+                                <option value="11">Desember</option>
+                            </select>
+                        </div>
+
+                        <!-- Dropdown Tahun -->
+                        <div>
+                            <select x-model="analyticsYear" @change="triggerChartUpdate()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500">
+                                <template x-for="yr in availableYears" :key="yr">
+                                    <option :value="yr" x-text="yr"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <!-- MAIN BALANCE CARD (Total Saldo Murni) -->
+                    <div class="animate-fade-in-up delay-200 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[24px] p-6 shadow-lg shadow-indigo-600/20 flex flex-col justify-between relative overflow-hidden transform transition-all duration-300 hover:-translate-y-2 hover:shadow-indigo-500/40 cursor-default">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
+                        <div>
+                            <p class="text-[11px] font-bold text-indigo-100 uppercase tracking-widest mb-2">Total Saldo Kas Murni</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-white tracking-tight" x-text="formatRupiah(calculateTotalBalance())">Rp 0</h3>
+                        </div>
+                        <div class="mt-6 flex items-center justify-between">
+                            <span class="text-xs text-indigo-100 font-medium bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Arus Masuk - Keluar</span>
+                            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white backdrop-blur-sm">
+                                <i class="fa-solid fa-wallet text-sm"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pemasukan Terfilter -->
+                    <div class="animate-fade-in-up delay-300 bg-white rounded-[24px] p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-default">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Pemasukan Periode Ini</p>
+                                <div class="w-8 h-8 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center">
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-2xl font-extrabold text-emerald-600 tracking-tight" x-text="formatRupiah(calculateFilteredIncome())">Rp 0</h3>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md" x-text="analyticsPeriod === 'yearly' ? 'Tahun ' + analyticsYear : getMonthName(analyticsMonth) + ' ' + analyticsYear"></span>
+                        </div>
+                    </div>
+
+                    <!-- Pengeluaran Terfilter -->
+                    <div class="animate-fade-in-up delay-400 bg-white rounded-[24px] p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-default">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Pengeluaran Periode Ini</p>
+                                <div class="w-8 h-8 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-2xl font-extrabold text-rose-600 tracking-tight" x-text="formatRupiah(calculateFilteredExpense())">Rp 0</h3>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md" x-text="analyticsPeriod === 'yearly' ? 'Tahun ' + analyticsYear : getMonthName(analyticsMonth) + ' ' + analyticsYear"></span>
+                        </div>
+                    </div>
+
+                    <!-- Total Piutang (Sisa Tagihan) -->
+                    <div class="animate-fade-in-up delay-500 bg-white rounded-[24px] p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-default">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Piutang / Sisa Tagihan</p>
+                                <div class="w-8 h-8 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-2xl font-extrabold text-amber-600 tracking-tight" x-text="formatRupiah(calculateTotalReceivables())">Rp 0</h3>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md"><i class="fa-solid fa-user-clock mr-1"></i> Semua Invoice</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main Flow Chart -->
+                    <div class="animate-fade-in-up delay-400 bg-white p-6 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 lg:col-span-2 transition-all duration-300 hover:shadow-xl">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h4 class="font-extrabold text-slate-900 text-lg" x-text="analyticsPeriod === 'yearly' ? 'Tren Bulanan Arus Kas' : 'Detail Harian Arus Kas'"></h4>
+                                <p class="text-xs text-slate-500 mt-1 font-medium" x-text="analyticsPeriod === 'yearly' ? 'Perbandingan arus kas selama 12 bulan' : 'Perbandingan arus kas selama satu month penuh'"></p>
+                            </div>
+                            <span class="text-xs bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 font-bold" x-text="analyticsPeriod === 'yearly' ? 'Tahun ' + analyticsYear : getMonthName(analyticsMonth) + ' ' + analyticsYear"></span>
+                        </div>
+                        <div class="relative h-[280px] w-full">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="animate-fade-in-up delay-500 bg-white p-6 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between transition-all duration-300 hover:shadow-xl">
+                        <div>
+                            <h4 class="font-extrabold text-slate-900 text-lg mb-1">Proporsi Penjualan</h4>
+                            <p class="text-xs text-slate-500 font-medium mb-6">Distribusi berdasarkan kategori produk utama</p>
+                        </div>
+                        <div class="relative h-[200px] w-full flex items-center justify-center">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs text-center mt-6 pt-5 border-t border-slate-100">
+                            <div class="bg-slate-50 py-2 rounded-lg font-semibold text-slate-700">
+                                <span class="inline-block w-3 h-3 bg-[#6366f1] rounded-full mr-1.5 align-middle"></span> Kusen
+                            </div>
+                            <div class="bg-slate-50 py-2 rounded-lg font-semibold text-slate-700">
+                                <span class="inline-block w-3 h-3 bg-[#10b981] rounded-full mr-1.5 align-middle"></span> Batu
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities Table -->
+                <div class="bg-white rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-extrabold text-slate-900 text-lg">Aktivitas Terakhir</h4>
+                            <p class="text-xs text-slate-500 mt-1 font-medium">Log riwayat transaksi kas dan invoice</p>
+                        </div>
+                        <button @click="currentTab = 'riwayat-invoice'" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-4 py-2 rounded-lg transition-colors">Lihat Semua</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 text-[11px] text-slate-400 uppercase font-bold tracking-wider">
+                                    <th class="py-4 px-6 font-semibold">Tanggal</th>
+                                    <th class="py-4 px-6 font-semibold">Keterangan / Transaksi</th>
+                                    <th class="py-4 px-6 font-semibold">Kategori</th>
+                                    <th class="py-4 px-6 text-right font-semibold">Nominal</th>
+                                    <th class="py-4 px-6 text-center font-semibold">Label</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-slate-100">
+                                <template x-for="item in getRecentActivities()" :key="item.id">
+                                    <tr class="hover:bg-slate-50/80 transition-colors group">
+                                        <td class="py-4 px-6 text-slate-500 font-medium whitespace-nowrap" x-text="formatDate(item.date)"></td>
+                                        <td class="py-4 px-6 font-bold text-slate-800">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0" 
+                                                     :class="item.type === 'in' ? 'bg-emerald-100 text-emerald-600' : (item.type === 'out' ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600')">
+                                                    <i :class="item.type === 'in' ? 'fa-solid fa-arrow-down' : (item.type === 'out' ? 'fa-solid fa-arrow-up' : 'fa-solid fa-file-invoice')"></i>
+                                                </div>
+                                                <span x-text="item.name" class="line-clamp-1"></span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-6 text-slate-500 font-medium" x-text="item.category"></td>
+                                        <td class="py-4 px-6 text-right font-extrabold" :class="item.type === 'in' ? 'text-emerald-600' : (item.type === 'out' ? 'text-rose-600' : 'text-slate-900')" x-text="formatRupiah(item.amount)"></td>
+                                        <td class="py-4 px-6 text-center">
+                                            <span :class="item.type === 'in' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (item.type === 'out' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-700 border-slate-200')" class="px-3 py-1 rounded-full text-[10px] font-bold border inline-block" x-text="item.type === 'in' ? 'Kas Masuk' : (item.type === 'out' ? 'Kas Keluar' : 'Invoice')">
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB: KAS MASUK ================= -->
+            <div x-show="currentTab === 'kas-masuk'" 
+                 x-transition:enter="transition ease-out duration-500" 
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+                 class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
+                <!-- Form Input -->
+                <div class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 lg:col-span-1 h-fit">
+                    <div class="mb-6">
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center text-lg mb-3">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <h4 class="font-extrabold text-slate-900 text-xl">Input Kas Masuk</h4>
+                        <p class="text-xs text-slate-500 font-medium mt-1">Catat penerimaan dana operasional.</p>
+                    </div>
+
+                    <form @submit.prevent="addKasMasuk()" class="space-y-5">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tanggal Transaksi</label>
+                            <input type="date" x-model="formIn.date" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Kategori</label>
+                            <select x-model="formIn.category" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                                <option value="Penjualan Kusen">Penjualan Kusen</option>
+                                <option value="Penjualan Batu">Penjualan Batu</option>
+                                <option value="Pemasukan Lainnya">Pemasukan Lainnya</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Nominal (Rp)</label>
+                            <input type="number" x-model="formIn.amount" placeholder="Contoh: 5000000" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-bold text-slate-800">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Keterangan</label>
+                            <textarea x-model="formIn.notes" placeholder="Tulis rincian..." rows="3" class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all duration-300 text-sm font-medium text-slate-700 resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/30 transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                            <i class="fa-solid fa-check"></i> Simpan Pemasukan
+                        </button>
+                    </form>
+                </div>
+
+                <!-- History Table -->
+                <div class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 lg:col-span-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h4 class="font-extrabold text-slate-900 text-xl">Riwayat Kas Masuk</h4>
+                            <p class="text-xs text-slate-500 font-medium mt-1">Daftar transaksi penerimaan dana.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="relative w-full sm:w-56">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-search text-sm"></i>
+                                </span>
+                                <input type="text" x-model="kasMasukSearchQuery" placeholder="Cari keterangan / kategori..." class="w-full pl-9 pr-4 py-2 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                            </div>
+                            <div class="bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-xl flex flex-col items-end shrink-0 hidden sm:flex">
+                                <span class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Total Masuk</span>
+                                <span class="text-sm font-black text-emerald-700" x-text="formatRupiah(calculateTotalIn())"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-100">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 uppercase font-bold tracking-wide">
+                                    <th class="py-3.5 px-5">Tanggal</th>
+                                    <th class="py-3.5 px-5">Kategori</th>
+                                    <th class="py-3.5 px-5">Keterangan</th>
+                                    <th class="py-3.5 px-5 text-right">Nominal</th>
+                                    <th class="py-3.5 px-5 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-slate-100">
+                                <template x-for="item in getFilteredKasMasuk()" :key="item.id">
+                                    <tr x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 -translate-x-4"
+                                        x-transition:enter-end="opacity-100 translate-x-0"
+                                        x-transition:leave="transition ease-in duration-200"
+                                        x-transition:leave-start="opacity-100 translate-x-0"
+                                        x-transition:leave-end="opacity-0 translate-x-4" 
+                                        class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="py-4 px-5 text-slate-500 font-medium whitespace-nowrap" x-text="formatDate(item.date)"></td>
+                                        <td class="py-4 px-5 font-bold text-slate-700">
+                                            <span class="bg-slate-100 px-2.5 py-1 rounded-md text-[11px]" x-text="item.category"></span>
+                                        </td>
+                                        <td class="py-4 px-5 text-slate-600 font-medium" x-text="item.notes || '-'"></td>
+                                        <td class="py-4 px-5 text-right font-extrabold text-emerald-600" x-text="formatRupiah(item.amount)"></td>
+                                        <td class="py-4 px-5 text-center">
+                                            <button @click="triggerConfirmDelete('in', item.id)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center mx-auto">
+                                                <i class="fa-regular fa-trash-can text-sm"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="getFilteredKasMasuk().length === 0">
+                                    <tr>
+                                        <td colspan="5" class="py-12 text-center">
+                                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-50 text-slate-300 mb-3">
+                                                <i class="fa-solid fa-folder-open text-xl"></i>
+                                            </div>
+                                            <p class="text-slate-500 font-medium text-sm">Belum ada data kas masuk.</p>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB: KAS KELUAR ================= -->
+            <div x-show="currentTab === 'kas-keluar'" 
+                 x-transition:enter="transition ease-out duration-500" 
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+                 class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
+                <!-- Form Input -->
+                <div class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 lg:col-span-1 h-fit">
+                    <div class="mb-6">
+                        <div class="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center text-lg mb-3">
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                        </div>
+                        <h4 class="font-extrabold text-slate-900 text-xl">Input Kas Keluar</h4>
+                        <p class="text-xs text-slate-500 font-medium mt-1">Catat pengeluaran dana operasional.</p>
+                    </div>
+
+                    <form @submit.prevent="addKasKeluar()" class="space-y-5">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tanggal Transaksi</label>
+                            <input type="date" x-model="formOut.date" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Kategori</label>
+                            <select x-model="formOut.category" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                                <option value="Pengeluaran Kusen">Pengeluaran Kusen</option>
+                                <option value="Pengeluaran Batu">Pengeluaran Batu</option>
+                                <option value="Pengeluaran Lainnya">Pengeluaran Lainnya</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Nominal (Rp)</label>
+                            <input type="number" x-model="formOut.amount" placeholder="Contoh: 1500000" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm font-bold text-slate-800">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Keterangan</label>
+                            <textarea x-model="formOut.notes" placeholder="Tulis rincian..." rows="3" class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all duration-300 text-sm font-medium text-slate-700 resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-rose-500/30 transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                            <i class="fa-solid fa-check"></i> Simpan Pengeluaran
+                        </button>
+                    </form>
+                </div>
+
+                <!-- History Table -->
+                <div class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 lg:col-span-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h4 class="font-extrabold text-slate-900 text-xl">Riwayat Kas Keluar</h4>
+                            <p class="text-xs text-slate-500 font-medium mt-1">Daftar transaksi pengeluaran dana.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="relative w-full sm:w-56">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-search text-sm"></i>
+                                </span>
+                                <input type="text" x-model="kasKeluarSearchQuery" placeholder="Cari keterangan / kategori..." class="w-full pl-9 pr-4 py-2 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                            </div>
+                            <div class="bg-rose-50 border border-rose-100 px-4 py-2 rounded-xl flex flex-col items-end shrink-0 hidden sm:flex">
+                                <span class="text-[10px] text-rose-600 font-bold uppercase tracking-wider">Total Keluar</span>
+                                <span class="text-sm font-black text-rose-700" x-text="formatRupiah(calculateTotalOut())"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-100">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 uppercase font-bold tracking-wide">
+                                    <th class="py-3.5 px-5">Tanggal</th>
+                                    <th class="py-3.5 px-5">Kategori</th>
+                                    <th class="py-3.5 px-5">Keterangan</th>
+                                    <th class="py-3.5 px-5 text-right">Nominal</th>
+                                    <th class="py-3.5 px-5 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-slate-100">
+                                <template x-for="item in getFilteredKasKeluar()" :key="item.id">
+                                    <tr x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 -translate-x-4"
+                                        x-transition:enter-end="opacity-100 translate-x-0"
+                                        x-transition:leave="transition ease-in duration-200"
+                                        x-transition:leave-start="opacity-100 translate-x-0"
+                                        x-transition:leave-end="opacity-0 translate-x-4"
+                                        class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="py-4 px-5 text-slate-500 font-medium whitespace-nowrap" x-text="formatDate(item.date)"></td>
+                                        <td class="py-4 px-5 font-bold text-slate-700">
+                                            <span class="bg-slate-100 px-2.5 py-1 rounded-md text-[11px]" x-text="item.category"></span>
+                                        </td>
+                                        <td class="py-4 px-5 text-slate-600 font-medium" x-text="item.notes || '-'"></td>
+                                        <td class="py-4 px-5 text-right font-extrabold text-rose-600" x-text="formatRupiah(item.amount)"></td>
+                                        <td class="py-4 px-5 text-center">
+                                            <button @click="triggerConfirmDelete('out', item.id)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center mx-auto">
+                                                <i class="fa-regular fa-trash-can text-sm"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="getFilteredKasKeluar().length === 0">
+                                    <tr>
+                                        <td colspan="5" class="py-12 text-center">
+                                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-50 text-slate-300 mb-3">
+                                                <i class="fa-solid fa-folder-open text-xl"></i>
+                                            </div>
+                                            <p class="text-slate-500 font-medium text-sm">Belum ada data kas keluar.</p>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB: KEUANGAN PRIBADI ================= -->
+            <div x-show="currentTab === 'keuangan-pribadi'" 
+                 x-transition:enter="transition ease-out duration-500" 
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+                 class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
+                <!-- Form -->
+                <div class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 lg:col-span-1 h-fit">
+                    <div class="mb-6">
+                        <div class="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center text-lg mb-3">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <h4 class="font-extrabold text-slate-900 text-xl" x-text="isEditingRekening ? 'Edit Rekening' : 'Tambah Rekening'"></h4>
+                        <p class="text-xs text-slate-500 font-medium mt-1">Kelola data saldo aset dan rekening Anda.</p>
+                    </div>
+
+                    <form @submit.prevent="saveRekening()" class="space-y-5">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Nama Bank / E-Wallet</label>
+                            <input type="text" x-model="rekeningForm.name" placeholder="Contoh: BCA, GoPay, Tunai..." required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Jenis</label>
+                            <select x-model="rekeningForm.type" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                                <option value="Bank">Rekening Bank</option>
+                                <option value="E-Wallet">Dompet Digital (E-Wallet)</option>
+                                <option value="Cash">Tunai / Cash</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Total Saldo (Rp)</label>
+                            <input type="number" x-model="rekeningForm.balance" placeholder="Contoh: 500000" required class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition-all text-sm font-bold text-slate-800">
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-amber-500/30 transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                                <i class="fa-solid fa-check"></i> <span x-text="isEditingRekening ? 'Simpan Perubahan' : 'Tambah Data'"></span>
+                            </button>
+                            <template x-if="isEditingRekening">
+                                <button type="button" @click="resetRekeningForm()" class="px-4 py-3.5 bg-slate-50 hover:bg-slate-100 active:scale-95 border border-slate-200 text-slate-600 font-bold rounded-xl transition-all duration-300">
+                                    Batal
+                                </button>
+                            </template>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- List -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Total Saldo Banner -->
+                    <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-[24px] p-8 text-white shadow-xl shadow-amber-500/20 relative overflow-hidden flex items-center justify-between">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
+                        <div class="relative z-10">
+                            <p class="text-[11px] font-bold text-amber-100 uppercase tracking-widest mb-1">Total Saldo Keuangan Pribadi</p>
+                            <h3 class="text-3xl md:text-4xl font-black tracking-tight" x-text="formatRupiah(calculateTotalRekening())">Rp 0</h3>
+                        </div>
+                        <div class="relative z-10 w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+                            <i class="fa-solid fa-sack-dollar text-2xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- Menu Saldo Selisih -->
+                    <div class="bg-white rounded-[24px] p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 transition-all hover:shadow-lg">
+                        <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <h4 class="font-extrabold text-slate-900 text-lg">Menu Saldo Selisih</h4>
+                                <p class="text-xs text-slate-500 font-medium mt-0.5">Perbandingan pencatatan kas murni dengan total rekening aktual.</p>
+                            </div>
+                            <div class="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <!-- Kas Murni -->
+                            <div class="bg-slate-50 rounded-[16px] p-4 border border-slate-200">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Kas Murni</p>
+                                <h3 class="text-lg font-black text-slate-800" x-text="formatRupiah(calculateTotalBalance())"></h3>
+                            </div>
+                            <!-- Rekening -->
+                            <div class="bg-slate-50 rounded-[16px] p-4 border border-slate-200">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Keuangan</p>
+                                <h3 class="text-lg font-black text-slate-800" x-text="formatRupiah(calculateTotalRekening())"></h3>
+                            </div>
+                            <!-- Saldo Final -->
+                            <div :class="calculateSelisih() < 0 ? 'bg-rose-50 border-rose-200' : (calculateSelisih() > 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-indigo-50 border-indigo-200')" class="rounded-[16px] p-4 border relative overflow-hidden transition-colors">
+                                <p class="text-[10px] font-bold uppercase tracking-widest mb-1 relative z-10" 
+                                   :class="calculateSelisih() < 0 ? 'text-rose-600' : (calculateSelisih() > 0 ? 'text-emerald-600' : 'text-indigo-600')">Saldo Final (Selisih)</p>
+                                <h3 class="text-lg font-black relative z-10" 
+                                    :class="calculateSelisih() < 0 ? 'text-rose-700' : (calculateSelisih() > 0 ? 'text-emerald-700' : 'text-indigo-700')" 
+                                    x-text="formatRupiah(calculateSelisih())"></h3>
+                                <div class="absolute -right-2 -bottom-2 opacity-10 text-4xl">
+                                    <i class="fa-solid fa-calculator"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grid Items -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <template x-for="rek in rekeningList" :key="rek.id">
+                            <div x-transition:enter="transition ease-out duration-400"
+                                 x-transition:enter-start="opacity-0 scale-90 translate-y-4"
+                                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-200"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-90"
+                                 class="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between group hover:border-amber-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl relative overflow-hidden">
+                                <!-- Background subtle shape -->
+                                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full z-0 group-hover:bg-amber-50 transition-colors"></div>
+                                
+                                <div class="relative z-10 flex items-start justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                                             :class="rek.type === 'Bank' ? 'bg-blue-50 text-blue-600' : (rek.type === 'E-Wallet' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600')">
+                                            <i :class="rek.type === 'Bank' ? 'fa-solid fa-building-columns' : (rek.type === 'E-Wallet' ? 'fa-solid fa-mobile-screen' : 'fa-solid fa-money-bill-wave')"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="rek.type"></p>
+                                            <h4 class="font-extrabold text-slate-900 text-base" x-text="rek.name"></h4>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button @click="editRekening(rek)" class="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-500 hover:text-amber-600 flex items-center justify-center transition-colors">
+                                            <i class="fa-solid fa-pen text-[10px]"></i>
+                                        </button>
+                                        <button @click="triggerConfirmDelete('rekening', rek.id)" class="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-500 hover:text-rose-600 flex items-center justify-center transition-colors">
+                                            <i class="fa-solid fa-trash text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="relative z-10">
+                                    <p class="text-xs text-slate-500 font-medium mb-0.5">Saldo Tersedia</p>
+                                    <h3 class="text-xl font-black text-slate-800" x-text="formatRupiah(rek.balance)"></h3>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB: BUAT INVOICE BARU ================= -->
+            <div x-show="currentTab === 'invoice-baru'" 
+                 x-transition:enter="transition ease-out duration-500" 
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+                 class="grid grid-cols-1 lg:grid-cols-12 gap-8" style="display: none;">
+                
+                <!-- Left Side: Invoice Builder Form -->
+                <div class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 lg:col-span-5 h-fit space-y-6 no-print">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                        <div>
+                            <h4 class="font-extrabold text-slate-900 text-xl">Editor Invoice</h4>
+                            <p class="text-xs text-slate-500 font-medium mt-1">Buat dokumen penagihan resmi.</p>
+                        </div>
+                        <button @click="resetInvoiceForm()" class="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate-right"></i> Reset
+                        </button>
+                    </div>
+
+                    <!-- Client Details Block -->
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">No. Invoice</label>
+                                <input type="text" x-model="invoiceForm.invoiceNo" readonly class="w-full px-3 py-2.5 bg-slate-100/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tanggal</label>
+                                <input type="date" x-model="invoiceForm.date" class="w-full px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-xs font-semibold">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Klien / Pelanggan</label>
+                            <input type="text" x-model="invoiceForm.customerName" placeholder="Nama entitas atau individu..." class="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-bold text-slate-800">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Alamat Pengiriman</label>
+                            <textarea x-model="invoiceForm.customerAddress" placeholder="Alamat lengkap tujuan..." rows="2" class="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium text-slate-700 resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Daftar Item</span>
+                            <button @click="addInvoiceItem()" class="text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Tambah Item
+                            </button>
+                        </div>
+
+                        <div class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                            <template x-for="(item, index) in invoiceForm.items" :key="index">
+                                <div x-transition:enter="transition ease-out duration-300"
+                                     x-transition:enter-start="opacity-0 -translate-x-4"
+                                     x-transition:enter-end="opacity-100 translate-x-0"
+                                     x-transition:leave="transition ease-in duration-200"
+                                     x-transition:leave-start="opacity-100 translate-x-0"
+                                     x-transition:leave-end="opacity-0 translate-x-4"
+                                     class="bg-white border border-slate-200 p-4 rounded-[16px] space-y-3 relative group hover:border-indigo-300 transition-all duration-300 shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-md" x-text="'ITEM ' + (index + 1)"></span>
+                                        <button @click="removeInvoiceItem(index)" class="text-slate-300 hover:text-rose-500 transition-colors">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <input type="text" x-model="item.description" placeholder="Deskripsi barang / jasa..." class="w-full px-0 py-1 bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none transition-all text-sm font-bold text-slate-800 placeholder-slate-300">
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 block font-semibold mb-1">Qty</label>
+                                            <input type="number" x-model.number="item.qty" min="1" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-center font-bold outline-none focus:border-indigo-500">
+                                        </div>
+                                        <div class="col-span-2">
+                                            <label class="text-[10px] text-slate-400 block font-semibold mb-1">Harga Satuan (Rp)</label>
+                                            <input type="number" x-model.number="item.unitPrice" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right font-bold outline-none focus:border-indigo-500">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Payment Settings Block -->
+                    <div class="pt-4 border-t border-slate-100 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Diskon (Rp)</label>
+                                <input type="number" x-model.number="invoiceForm.discount" min="0" placeholder="0" class="w-full px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm text-right font-bold text-rose-600">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Metode</label>
+                                <select x-model="invoiceForm.paymentMethod" class="w-full px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-bold text-slate-700">
+                                    <option value="Cash">Tunai (Cash)</option>
+                                    <option value="Transfer">Transfer Bank</option>
+                                    <option value="QRIS">QRIS</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-indigo-50/50 p-4 rounded-[16px] border border-indigo-100 space-y-3">
+                            <span class="text-[10px] font-black text-indigo-800 uppercase tracking-widest block mb-2">Termin Pembayaran</span>
+                            <div class="grid grid-cols-1 gap-2.5">
+                                <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200">
+                                    <label class="text-xs font-bold text-slate-600">DP 1</label>
+                                    <input type="number" x-model.number="invoiceForm.dp1" min="0" placeholder="0" class="w-1/2 px-2 py-1 bg-transparent text-sm text-right font-bold text-emerald-600 outline-none border-b border-transparent focus:border-emerald-300">
+                                </div>
+                                <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200">
+                                    <label class="text-xs font-bold text-slate-600">DP 2</label>
+                                    <input type="number" x-model.number="invoiceForm.dp2" min="0" placeholder="0" class="w-1/2 px-2 py-1 bg-transparent text-sm text-right font-bold text-emerald-600 outline-none border-b border-transparent focus:border-emerald-300">
+                                </div>
+                                <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-indigo-200 shadow-sm">
+                                    <label class="text-xs font-extrabold text-indigo-700">Pelunasan</label>
+                                    <input type="number" x-model.number="invoiceForm.pelunasan" min="0" placeholder="0" class="w-1/2 px-2 py-1 bg-transparent text-sm text-right font-black text-indigo-700 outline-none border-b border-transparent focus:border-indigo-300">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="pt-2 flex gap-3">
+                        <button @click="saveInvoice()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all duration-300 text-sm flex justify-center items-center gap-2 transform hover:-translate-y-1">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data
+                        </button>
+                        <button @click="window.print()" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white px-5 py-3.5 rounded-xl font-bold shadow-lg shadow-slate-800/20 transition-all duration-300 text-sm flex justify-center items-center gap-2 transform hover:-translate-y-1">
+                            <i class="fa-solid fa-print"></i> Cetak
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 flex justify-center">
+                    <div id="invoice-print-area" class="bg-white rounded-none md:rounded-[12px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] w-full max-w-[21cm] min-h-[29.7cm] flex flex-col relative overflow-hidden print:shadow-none print:rounded-none mx-auto border border-slate-200">
+                        
+                        <!-- Top Accent Line -->
+                        <div class="h-3 w-full bg-indigo-600"></div>
+
+                        <!-- PREMIUM STAMP "LUNAS" -->
+                        <template x-if="Number(invoiceForm.pelunasan) > 0">
+                            <div class="absolute top-[18%] right-16 border-[6px] border-emerald-500/80 text-emerald-500/80 px-8 py-3 rounded-2xl tracking-widest rotate-12 pointer-events-none select-none z-50 flex flex-col items-center justify-center bg-white/90 shadow-lg mix-blend-multiply">
+                                <span class="text-4xl font-black uppercase tracking-[0.2em] mb-1">LUNAS</span>
+                                <div class="w-full h-1 bg-emerald-500/80 mb-1"></div>
+                                <span class="text-[10px] font-bold tracking-widest uppercase" x-text="'TGL: ' + formatDate(invoiceForm.date)"></span>
+                            </div>
+                        </template>
+
+                        <div class="p-10 flex-1 flex flex-col">
+                            <!-- Header Area -->
+                            <div class="flex items-start justify-between pb-8 border-b border-slate-200">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 flex items-center justify-center shrink-0">
+                                        <img src="Logo-01_2.png" alt="Logo" class="object-contain w-full h-full" onerror="this.src='https://placehold.co/150x150/4f46e5/ffffff?text=AU'">
+                                    </div>
+                                    <div>
+                                        <h1 class="text-xl font-black text-slate-900 tracking-tight uppercase">Arus Kusen & Batu Alam</h1>
+                                        
+                                        <div class="mt-3 text-[10px] text-slate-500 leading-relaxed font-medium">
+                                            <p><span class="font-bold text-slate-700">Cabang 1:</span> Jl. Raya Laswi No.366, Ciheulang, Kab. Bandung</p>
+                                            <p><span class="font-bold text-slate-700">Cabang 2:</span> Jl. Terusan Bojongsoang No.114, Baleendah</p>
+                                            <p class="text-indigo-600 font-bold mt-0.5"><i class="fa-solid fa-phone mr-1"></i> +62 823 2017 1542</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <h2 class="text-4xl font-black text-slate-200 uppercase tracking-tighter">INVOICE</h2>
+                                </div>
+                            </div>
+
+                            <!-- Invoice Metadata & Billing Info -->
+                            <div class="flex justify-between mt-8 mb-8">
+                                <div class="space-y-1">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Ditagihkan Kepada:</p>
+                                    <h3 class="font-black text-slate-900 text-base uppercase" x-text="invoiceForm.customerName || 'NAMA PELANGGAN'"></h3>
+                                    <p class="text-slate-600 text-xs whitespace-pre-line leading-relaxed max-w-[250px] font-medium" x-text="invoiceForm.customerAddress || 'Alamat lengkap pelanggan...'"></p>
+                                </div>
+                                
+                                <div class="bg-slate-50/80 border border-slate-100 p-4 rounded-xl min-w-[200px] h-fit">
+                                    <table class="w-full text-xs">
+                                        <tbody>
+                                            <tr>
+                                                <td class="py-1 text-slate-500 font-semibold">No. Invoice</td>
+                                                <td class="py-1 text-right font-black text-slate-900" x-text="invoiceForm.invoiceNo"></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 text-slate-500 font-semibold">Tanggal</td>
+                                                <td class="py-1 text-right font-bold text-slate-800" x-text="formatDate(invoiceForm.date)"></td>
+                                            </tr>
+                                            <tr class="border-t border-slate-200/60">
+                                                <td class="py-1.5 pt-2 text-slate-500 font-semibold">Metode Bayar</td>
+                                                <td class="py-1.5 pt-2 text-right font-black text-indigo-600 uppercase" x-text="invoiceForm.paymentMethod"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Clean Minimalist Table -->
+                            <div class="flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b-2 border-slate-900 text-[10px] text-slate-900 uppercase font-black tracking-widest">
+                                            <th class="py-3 px-2">Deskripsi Layanan / Barang</th>
+                                            <th class="py-3 px-2 text-center w-16">Qty</th>
+                                            <th class="py-3 px-2 text-right w-32">Harga (Rp)</th>
+                                            <th class="py-3 px-2 text-right w-36">Total (Rp)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-xs border-b border-slate-300">
+                                        <template x-for="(item, index) in invoiceForm.items" :key="index">
+                                            <tr class="border-b border-slate-100/70 last:border-0">
+                                                <td class="py-3.5 px-2">
+                                                    <p class="font-bold text-slate-800" x-text="item.description || '-'"></p>
+                                                </td>
+                                                <td class="py-3.5 px-2 text-center font-bold text-slate-600" x-text="item.qty"></td>
+                                                <td class="py-3.5 px-2 text-right text-slate-600 font-medium" x-text="formatRupiah(item.unitPrice)"></td>
+                                                <td class="py-3.5 px-2 text-right font-black text-slate-900" x-text="formatRupiah(item.qty * item.unitPrice)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Totals Calculation -->
+                            <div class="flex justify-between items-end mt-6">
+                                <!-- Bank Info -->
+                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 w-64">
+                                    <p class="text-[9px] font-black text-slate-900 uppercase tracking-widest mb-2">Instruksi Pembayaran</p>
+                                    <p class="text-[10px] text-slate-600 font-bold mb-0.5">Bank BCA</p>
+                                    <p class="text-sm font-black text-indigo-700 tracking-wider mb-0.5">337 235 6178</p>
+                                    <p class="text-[10px] text-slate-500 font-medium">a.n <span class="font-bold text-slate-700">Fikri Amarulhaq</span></p>
+                                </div>
+
+                                <!-- Summary Numbers -->
+                                <div class="w-72 space-y-1.5 text-xs text-right">
+                                    <div class="flex justify-between text-slate-500 font-medium px-2">
+                                        <span>Subtotal</span>
+                                        <span class="font-bold text-slate-800" x-text="formatRupiah(calculateInvoiceSubtotal())"></span>
+                                    </div>
+                                    <template x-if="invoiceForm.discount > 0">
+                                        <div class="flex justify-between text-rose-500 font-medium px-2">
+                                            <span>Diskon</span>
+                                            <span>- <span x-text="formatRupiah(invoiceForm.discount)"></span></span>
+                                        </div>
+                                    </template>
+                                    
+                                    <div class="flex justify-between border-t border-slate-300 pt-2 pb-2 px-2 text-slate-900 font-black text-sm">
+                                        <span>TOTAL KESELURUHAN</span>
+                                        <span x-text="formatRupiah(calculateInvoiceFinalTotal())"></span>
+                                    </div>
+                                    
+                                    <!-- Payments Breakdown -->
+                                    <div class="space-y-1 text-[10px] text-slate-500 font-medium pt-1 px-2">
+                                        <template x-if="invoiceForm.dp1 > 0">
+                                            <div class="flex justify-between">
+                                                <span>Pembayaran: Uang Muka 1</span>
+                                                <span class="text-emerald-600 font-bold">- <span x-text="formatRupiah(invoiceForm.dp1)"></span></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="invoiceForm.dp2 > 0">
+                                            <div class="flex justify-between">
+                                                <span>Pembayaran: Uang Muka 2</span>
+                                                <span class="text-emerald-600 font-bold">- <span x-text="formatRupiah(invoiceForm.dp2)"></span></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="invoiceForm.pelunasan > 0">
+                                            <div class="flex justify-between">
+                                                <span>Pembayaran: Pelunasan</span>
+                                                <span class="text-emerald-600 font-bold">- <span x-text="formatRupiah(invoiceForm.pelunasan)"></span></span>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <!-- Final Balance Due -->
+                                    <div class="flex justify-between items-center border-t-[3px] border-slate-900 mt-2 pt-3 px-2">
+                                        <span class="font-black text-slate-900 text-xs uppercase tracking-widest">Sisa Tagihan</span>
+                                        <span class="font-black text-lg" :class="calculateInvoiceRemaining() <= 0 ? 'text-emerald-600' : 'text-slate-900'" x-text="formatRupiah(calculateInvoiceRemaining())"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer Signature -->
+                            <div class="mt-16 flex justify-between items-end">
+                                <div class="max-w-xs text-[9px] text-slate-400 font-medium leading-relaxed">
+                                    <p class="font-bold text-slate-600 mb-1">Syarat & Ketentuan:</p>
+                                    <ul class="list-disc pl-3 space-y-0.5">
+                                        <li>Pelunasan maksimal 14 hari setelah barang diterima.</li>
+                                        <li>Barang pesanan (custom) tidak dapat dibatalkan atau ditukar.</li>
+                                        <li>Kirim bukti transfer ke WhatsApp marketing.</li>
+                                    </ul>
+                                </div>
+                                <div class="text-center w-48">
+                                    <p class="text-slate-500 font-medium text-[10px] mb-1">Hormat Kami,</p>
+                                    <p class="font-black text-slate-900 tracking-widest text-xs mb-14 uppercase">Arena Usaha</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB: RIWAYAT INVOICE ================= -->
+            <div x-show="currentTab === 'riwayat-invoice'" 
+                 x-transition:enter="transition ease-out duration-500" 
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+                 class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100" style="display: none;">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-8">
+                    <div>
+                        <h4 class="font-extrabold text-slate-900 text-xl">Arsip & Riwayat Invoice</h4>
+                        <p class="text-xs text-slate-500 font-medium mt-1">Kelola dan cetak ulang dokumen penagihan pelanggan.</p>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                        <!-- Search Bar -->
+                        <div class="relative flex-1 sm:w-72">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-search text-sm"></i>
+                            </span>
+                            <input type="text" 
+                                   x-model="invoiceSearchQuery" 
+                                   placeholder="Cari nomor invoice atau pelanggan..." 
+                                   class="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-semibold text-slate-700">
+                        </div>
+                        <span class="text-xs bg-indigo-50 text-indigo-600 px-4 py-3 rounded-xl font-bold text-center whitespace-nowrap shadow-sm border border-indigo-100" 
+                              x-text="getFilteredInvoices().length + ' Dokumen'"></span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 uppercase font-bold tracking-wide">
+                                <th class="py-4 px-5">Nomor Invoice</th>
+                                <th class="py-4 px-5">Tgl. Terbit</th>
+                                <th class="py-4 px-5">Pelanggan</th>
+                                <th class="py-4 px-5 text-right">Total Tagihan</th>
+                                <th class="py-4 px-5 text-right">Pembayaran Masuk</th>
+                                <th class="py-4 px-5 text-right">Sisa Tagihan</th>
+                                <th class="py-4 px-5 text-center">Status</th>
+                                <th class="py-4 px-5 text-center">Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-100">
+                            <template x-for="inv in getFilteredInvoices()" :key="inv.id">
+                                <tr x-transition:enter="transition ease-out duration-300"
+                                    x-transition:enter-start="opacity-0 -translate-x-4"
+                                    x-transition:enter-end="opacity-100 translate-x-0"
+                                    x-transition:leave="transition ease-in duration-200"
+                                    x-transition:leave-start="opacity-100 translate-x-0"
+                                    x-transition:leave-end="opacity-0 translate-x-4"
+                                    class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="py-4 px-5 font-black text-indigo-600" x-text="inv.invoiceNo"></td>
+                                    <td class="py-4 px-5 text-slate-500 font-medium whitespace-nowrap" x-text="formatDate(inv.date)"></td>
+                                    <td class="py-4 px-5 font-bold text-slate-800" x-text="inv.customerName"></td>
+                                    <td class="py-4 px-5 text-right font-black text-slate-800" x-text="formatRupiah(inv.total)"></td>
+                                    
+                                    <td class="py-4 px-5 text-right font-bold text-emerald-600" x-text="formatRupiah(Number(inv.dp1 || 0) + Number(inv.dp2 || 0) + Number(inv.pelunasan || 0))"></td>
+                                    
+                                    <td class="py-4 px-5 text-right font-black text-rose-500" x-text="formatRupiah(inv.total - (Number(inv.dp1 || 0) + Number(inv.dp2 || 0) + Number(inv.pelunasan || 0)))"></td>
+                                    
+                                    <td class="py-4 px-5 text-center">
+                                        <template x-if="Number(inv.pelunasan) > 0">
+                                            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider">Lunas</span>
+                                        </template>
+                                        <template x-if="!(Number(inv.pelunasan) > 0)">
+                                            <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider">Pending</span>
+                                        </template>
+                                    </td>
+                                    
+                                    <td class="py-4 px-5 text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <button @click="loadInvoiceForPrint(inv)" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center" title="Buka & Edit">
+                                                <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                            </button>
+                                            <button @click="triggerConfirmDelete('invoice', inv.id)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center" title="Hapus">
+                                                <i class="fa-regular fa-trash-can text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="getFilteredInvoices().length === 0">
+                                <tr>
+                                    <td colspan="8" class="py-12 text-center">
+                                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-50 text-slate-300 mb-4">
+                                            <i class="fa-solid fa-file-invoice text-2xl"></i>
+                                        </div>
+                                        <p class="text-slate-500 font-bold">Tidak ada dokumen yang ditemukan.</p>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= TAB: DATABASE & CLOUD SINKRONISASI ================= -->
+            <div x-show="currentTab === 'integrasi-gas'" 
+                 x-transition:enter="transition ease-out duration-500" 
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+                 class="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100 space-y-6" style="display: none;">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-5">
+                    <div>
+                        <h4 class="font-extrabold text-slate-900 text-xl">Integrasi Google Sheets Cloud</h4>
+                        <p class="text-xs text-slate-500 font-medium mt-1">Sinkronisasikan pembukuan antara HP & Laptop secara instan.</p>
+                    </div>
+                    <button @click="triggerConfirmReset()" class="bg-rose-50 hover:bg-rose-500 active:scale-95 hover:text-white text-rose-600 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Factory Reset
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Cloud URL Input -->
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">URL Google Apps Script Web App</label>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" x-model="cloudUrl" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 text-xs font-semibold text-slate-700">
+                            <button @click="saveCloudUrl()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all duration-300 shadow-md transform hover:-translate-y-0.5">Simpan Koneksi</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-xl text-xs text-amber-900 leading-relaxed space-y-2">
+                        <p class="font-bold text-sm"><i class="fa-solid fa-circle-info mr-1"></i> Cara Sinkronisasi Antar HP & Laptop (Netlify + Sheets):</p>
+                        <ol class="list-decimal pl-5 space-y-1.5 font-medium">
+                            <li>Buka spreadsheet Google Sheets Anda lalu pilih menu **Extensions > Apps Script**.</li>
+                            <li>Tulis script server yang didapatkan dari file `Code.gs` ke dalamnya lalu simpan.</li>
+                            <li>Klik tombol **Deploy > New Deployment**. Pilih tipe: **Web App**.</li>
+                            <li>Atur pengaturan: *Execute as:* **Me** dan *Who has access:* **Anyone**.</li>
+                            <li>Klik **Deploy**, salin alamat URL Web App yang diberikan, lalu tempelkan (*paste*) ke kolom isian di atas.</li>
+                            <li>Lakukan pengisian URL yang sama pada HP Anda. Data otomatis akan sinkron di kedua perangkat!</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        function appState() {
+            return {
+                currentTab: 'dashboard',
+                mainChartInstance: null,
+                categoryChartInstance: null,
+                invoiceSearchQuery: '',
+                kasMasukSearchQuery: '',
+                kasKeluarSearchQuery: '',
+                cloudUrl: '',
+
+                // Analytics Filter States
+                analyticsPeriod: 'yearly', // 'yearly' | 'monthly'
+                analyticsMonth: new Date().getMonth(), // 0-11
+                analyticsYear: new Date().getFullYear(),
+                availableYears: [2024, 2025, 2026, 2027],
+
+                notification: {
+                    show: false,
+                    message: '',
+                    type: 'info'
+                },
+
+                confirmModal: {
+                    show: false,
+                    title: '',
+                    message: '',
+                    type: '', 
+                    targetId: null
+                },
+
+                kasMasukList: [],
+                kasKeluarList: [],
+                invoiceList: [],
+                rekeningList: [],
+
+                rekeningForm: {
+                    id: '',
+                    name: '',
+                    type: 'Bank',
+                    balance: ''
+                },
+                isEditingRekening: false,
+
+                formIn: {
+                    date: new Date().toISOString().split('T')[0],
+                    category: 'Penjualan Kusen',
+                    amount: '',
+                    notes: ''
+                },
+                formOut: {
+                    date: new Date().toISOString().split('T')[0],
+                    category: 'Pengeluaran Kusen',
+                    amount: '',
+                    notes: ''
+                },
+                invoiceForm: {
+                    id: '', 
+                    invoiceNo: '',
+                    date: new Date().toISOString().split('T')[0],
+                    customerName: '',
+                    customerAddress: '',
+                    items: [
+                        { description: '', qty: 1, unitPrice: 0 }
+                    ],
+                    discount: 0,
+                    dp1: 0,
+                    dp2: 0,
+                    pelunasan: 0,
+                    paymentMethod: 'Cash'
+                },
+
+                initApp() {
+                    // Muat URL Cloud jika ada
+                    this.cloudUrl = localStorage.getItem('cloud_url_arus') || '';
+
+                    // Safe Parsing LocalStorage
+                    this.kasMasukList = this.safeParse('kasMasukList_arus', []);
+                    this.kasKeluarList = this.safeParse('kasKeluarList_arus', []);
+                    this.invoiceList = this.safeParse('invoiceList_arus', []);
+                    
+                    this.rekeningList = this.safeParse('rekeningList_arus', [
+                        { id: 'rek-1', name: 'BCA', type: 'Bank', balance: 500000 },
+                        { id: 'rek-2', name: 'SeaBank', type: 'Bank', balance: 500000 },
+                        { id: 'rek-3', name: 'BSI', type: 'Bank', balance: 500000 },
+                        { id: 'rek-4', name: 'GoPay', type: 'E-Wallet', balance: 500000 },
+                        { id: 'rek-5', name: 'Shopee Pay', type: 'E-Wallet', balance: 500000 },
+                        { id: 'rek-6', name: 'Tunai / Cash', type: 'Cash', balance: 500000 }
+                    ]);
+
+                    this.selfHealingDB();
+                    this.generateNextInvoiceNumber();
+
+                    if (this.cloudUrl) {
+                        this.pullFromCloud();
+                    }
+
+                    this.$watch('currentTab', (value) => {
+                        if (value === 'dashboard') {
+                            setTimeout(() => this.renderCharts(), 100);
+                        } else {
+                            this.destroyCharts();
+                        }
+                    });
+                    setTimeout(() => this.renderCharts(), 200);
+                },
+
+                safeParse(key, fallback) {
+                    const data = localStorage.getItem(key);
+                    if (!data) return fallback;
+                    try {
+                        const parsed = JSON.parse(data);
+                        return Array.isArray(parsed) ? parsed : fallback;
+                    } catch (e) {
+                        return fallback;
+                    }
+                },
+
+                selfHealingDB() {
+                    let hasRepaired = false;
+
+                    this.kasMasukList = this.kasMasukList.map((item, index) => {
+                        if (!item || typeof item !== 'object') {
+                            hasRepaired = true;
+                            return { id: 'KM-' + Date.now() + '-' + index, date: new Date().toISOString().split('T')[0], category: 'Pemasukan Lainnya', amount: 0, notes: 'Repaired' };
+                        }
+                        if (!item.id || item.id === 'undefined') {
+                            hasRepaired = true;
+                            item.id = 'KM-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 1000);
+                        }
+                        item.amount = Number(item.amount) || 0;
+                        return item;
+                    });
+
+                    this.kasKeluarList = this.kasKeluarList.map((item, index) => {
+                        if (!item || typeof item !== 'object') {
+                            hasRepaired = true;
+                            return { id: 'KK-' + Date.now() + '-' + index, date: new Date().toISOString().split('T')[0], category: 'Pengeluaran Lainnya', amount: 0, notes: 'Repaired' };
+                        }
+                        if (!item.id || item.id === 'undefined') {
+                            hasRepaired = true;
+                            item.id = 'KK-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 1000);
+                        }
+                        item.amount = Number(item.amount) || 0;
+                        return item;
+                    });
+
+                    this.invoiceList = this.invoiceList.map((item, index) => {
+                        if (!item || typeof item !== 'object') {
+                            hasRepaired = true;
+                            return { id: 'INV-' + Date.now() + '-' + index, invoiceNo: 'INV/' + index, date: new Date().toISOString().split('T')[0], customerName: 'Repaired Customer', customerAddress: '', items: [], discount: 0, dp1: 0, dp2: 0, pelunasan: 0, paymentMethod: 'Cash', total: 0 };
+                        }
+                        if (!item.id || item.id === 'undefined') {
+                            hasRepaired = true;
+                            item.id = 'INV-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 1000);
+                        }
+                        item.total = Number(item.total) || 0;
+                        item.items = Array.isArray(item.items) ? item.items : [];
+                        return item;
+                    });
+
+                    this.rekeningList = this.rekeningList.map((item, index) => {
+                        if (!item || typeof item !== 'object') {
+                            hasRepaired = true;
+                            return { id: 'REK-' + Date.now() + '-' + index, name: 'Akun Dipulihkan', type: 'Bank', balance: 0 };
+                        }
+                        if (!item.id || item.id === 'undefined') {
+                            hasRepaired = true;
+                            item.id = 'REK-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 1000);
+                        }
+                        item.balance = Number(item.balance) || 0;
+                        return item;
+                    });
+
+                    if (hasRepaired) {
+                        this.persistData();
+                    }
+                },
+
+                persistData() {
+                    localStorage.setItem('kasMasukList_arus', JSON.stringify(this.kasMasukList));
+                    localStorage.setItem('kasKeluarList_arus', JSON.stringify(this.kasKeluarList));
+                    localStorage.setItem('invoiceList_arus', JSON.stringify(this.invoiceList));
+                    localStorage.setItem('rekeningList_arus', JSON.stringify(this.rekeningList));
+                },
+
+                triggerNotification(message, type = 'info') {
+                    this.notification.message = message;
+                    this.notification.type = type;
+                    this.notification.show = true;
+                    setTimeout(() => { this.notification.show = false; }, 4000);
+                },
+
+                triggerConfirmDelete(type, id) {
+                    this.confirmModal.type = type;
+                    this.confirmModal.targetId = id;
+                    this.confirmModal.title = "Hapus Data Ini?";
+                    this.confirmModal.message = "Tindakan ini akan menghapus riwayat transaksi secara permanen.";
+                    this.confirmModal.show = true;
+                },
+
+                triggerConfirmReset() {
+                    this.confirmModal.type = 'reset';
+                    this.confirmModal.targetId = null;
+                    this.confirmModal.title = "Peringatan Factory Reset!";
+                    this.confirmModal.message = "Ini akan menghapus SELURUH riwayat keuangan dan dokumen invoice Anda dari browser ini secara permanen.";
+                    this.confirmModal.show = true;
+                },
+
+                executeConfirmAction() {
+                    this.confirmModal.show = false;
+                    const type = this.confirmModal.type;
+                    const id = this.confirmModal.targetId;
+
+                    if (type === 'reset') {
+                        localStorage.clear();
+                        location.reload();
+                        return;
+                    }
+
+                    if (type === 'in') {
+                        this.kasMasukList = this.kasMasukList.filter(item => item.id !== id);
+                        this.triggerNotification("Transaksi kas masuk telah dihapus.", "success");
+                    } else if (type === 'out') {
+                        this.kasKeluarList = this.kasKeluarList.filter(item => item.id !== id);
+                        this.triggerNotification("Transaksi kas keluar telah dihapus.", "success");
+                    } else if (type === 'invoice') {
+                        this.kasMasukList = this.kasMasukList.filter(item => !item.id.startsWith('KM-' + id));
+                        this.invoiceList = this.invoiceList.filter(inv => inv.id !== id);
+                        this.triggerNotification("Invoice dan pembayaran kas terkait berhasil dihapus.", "success");
+                    } else if (type === 'rekening') {
+                        this.rekeningList = this.rekeningList.filter(item => item.id !== id);
+                        this.triggerNotification("Data rekening telah dihapus.", "success");
+                    }
+
+                    this.persistData();
+                    if (this.cloudUrl) {
+                        this.pushToCloud();
+                    }
+                    this.renderCharts();
+                },
+
+                destroyCharts() {
+                    if (this.mainChartInstance) {
+                        this.mainChartInstance.destroy();
+                        this.mainChartInstance = null;
+                    }
+                    if (this.categoryChartInstance) {
+                        this.categoryChartInstance.destroy();
+                        this.categoryChartInstance = null;
+                    }
+                },
+
+                triggerChartUpdate() {
+                    setTimeout(() => this.renderCharts(), 50);
+                },
+
+                getMonthName(index) {
+                    const names = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    return names[index] || '';
+                },
+
+                generateNextInvoiceNumber() {
+                    const year = new Date().getFullYear();
+                    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+                    const sequence = String(this.invoiceList.length + 1).padStart(4, '0');
+                    this.invoiceForm.invoiceNo = `INV/${year}/${month}/${sequence}`;
+                },
+
+                formatRupiah(number) {
+                    const val = Number(number);
+                    if (isNaN(val)) return 'Rp 0';
+                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+                },
+
+                formatDate(dateStr) {
+                    if (!dateStr) return '-';
+                    try {
+                        const date = new Date(dateStr);
+                        if (isNaN(date.getTime())) return dateStr;
+                        return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+                    } catch (e) {
+                        return dateStr || '-';
+                    }
+                },
+
+                calculateTotalRekening() {
+                    return this.rekeningList.reduce((sum, item) => sum + Number(item.balance || 0), 0);
+                },
+
+                // Total Balance (Always Cumulative Total)
+                calculateTotalIn() { return this.kasMasukList.reduce((sum, item) => sum + Number(item.amount || 0), 0); },
+                calculateTotalOut() { return this.kasKeluarList.reduce((sum, item) => sum + Number(item.amount || 0), 0); },
+                calculateTotalBalance() { return this.calculateTotalIn() - this.calculateTotalOut(); },
+
+                calculateSelisih() { return this.calculateTotalBalance() - this.calculateTotalRekening(); },
+
+                // Filtered Analytics Calculations (Based on Selected Month/Year controls)
+                calculateFilteredIncome() {
+                    return this.kasMasukList.filter(item => {
+                        if (!item || !item.date) return false;
+                        const d = new Date(item.date);
+                        if (this.analyticsPeriod === 'yearly') {
+                            return d.getFullYear() === Number(this.analyticsYear);
+                        } else {
+                            return d.getFullYear() === Number(this.analyticsYear) && d.getMonth() === Number(this.analyticsMonth);
+                        }
+                    }).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+                },
+
+                calculateFilteredExpense() {
+                    return this.kasKeluarList.filter(item => {
+                        if (!item || !item.date) return false;
+                        const d = new Date(item.date);
+                        if (this.analyticsPeriod === 'yearly') {
+                            return d.getFullYear() === Number(this.analyticsYear);
+                        } else {
+                            return d.getFullYear() === Number(this.analyticsYear) && d.getMonth() === Number(this.analyticsMonth);
+                        }
+                    }).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+                },
+
+                calculateTotalReceivables() {
+                    return this.invoiceList.reduce((sum, inv) => {
+                        const finalTotal = Number(inv.total || 0);
+                        const paidTotal = Number(inv.dp1 || 0) + Number(inv.dp2 || 0) + Number(inv.pelunasan || 0);
+                        return sum + Math.max(0, finalTotal - paidTotal);
+                    }, 0);
+                },
+
+                getRecentActivities() {
+                    const combined = [];
+                    this.kasMasukList.forEach(item => combined.push({ id: item.id, date: item.date, name: item.notes || 'Penerimaan Dana', category: item.category, amount: item.amount, type: 'in' }));
+                    this.kasKeluarList.forEach(item => combined.push({ id: item.id, date: item.date, name: item.notes || 'Pengeluaran Dana', category: item.category, amount: item.amount, type: 'out' }));
+                    this.invoiceList.forEach(inv => combined.push({ id: inv.id, date: inv.date, name: `Penagihan - ${inv.customerName}`, category: 'Invoice Terbit', amount: inv.total, type: 'invoice' }));
+                    return combined.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+                },
+
+                getFilteredInvoices() {
+                    if (!this.invoiceSearchQuery) return this.invoiceList;
+                    const query = this.invoiceSearchQuery.toLowerCase().trim();
+                    return this.invoiceList.filter(inv => 
+                        inv && (inv.invoiceNo.toLowerCase().includes(query) || inv.customerName.toLowerCase().includes(query))
+                    );
+                },
+
+                getFilteredKasMasuk() {
+                    if (!this.kasMasukSearchQuery) return this.kasMasukList;
+                    const query = this.kasMasukSearchQuery.toLowerCase().trim();
+                    return this.kasMasukList.filter(item => 
+                        item && (
+                            (item.notes && item.notes.toLowerCase().includes(query)) || 
+                            (item.category && item.category.toLowerCase().includes(query))
+                        )
+                    );
+                },
+
+                getFilteredKasKeluar() {
+                    if (!this.kasKeluarSearchQuery) return this.kasKeluarList;
+                    const query = this.kasKeluarSearchQuery.toLowerCase().trim();
+                    return this.kasKeluarList.filter(item => 
+                        item && (
+                            (item.notes && item.notes.toLowerCase().includes(query)) || 
+                            (item.category && item.category.toLowerCase().includes(query))
+                        )
+                    );
+                },
+
+                saveRekening() {
+                    if (!this.rekeningForm.name || this.rekeningForm.balance === '') {
+                        this.triggerNotification("Harap isi nama akun dan nominal saldonya.", "error");
+                        return;
+                    }
+
+                    if (this.isEditingRekening && this.rekeningForm.id) {
+                        this.rekeningList = this.rekeningList.map(rek => 
+                            rek.id === this.rekeningForm.id 
+                            ? { ...rek, name: this.rekeningForm.name, type: this.rekeningForm.type, balance: Number(this.rekeningForm.balance) } 
+                            : rek
+                        );
+                        this.triggerNotification("Data saldo berhasil diperbarui!", "success");
+                    } else {
+                        const newId = 'REK-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                        this.rekeningList = [...this.rekeningList, {
+                            id: newId,
+                            name: this.rekeningForm.name,
+                            type: this.rekeningForm.type,
+                            balance: Number(this.rekeningForm.balance)
+                        }];
+                        this.triggerNotification("Rekening baru ditambahkan!", "success");
+                    }
+
+                    this.persistData();
+                    this.resetRekeningForm();
+                    if (this.cloudUrl) { this.pushToCloud(); }
+                },
+
+                editRekening(rek) {
+                    this.isEditingRekening = true;
+                    this.rekeningForm = {
+                        id: rek.id,
+                        name: rek.name,
+                        type: rek.type,
+                        balance: rek.balance
+                    };
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                resetRekeningForm() {
+                    this.isEditingRekening = false;
+                    this.rekeningForm = { id: '', name: '', type: 'Bank', balance: '' };
+                },
+
+                addKasMasuk() {
+                    const newId = 'KM-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+                    this.kasMasukList = [...this.kasMasukList, { id: newId, date: this.formIn.date, category: this.formIn.category, amount: Number(this.formIn.amount), notes: this.formIn.notes }];
+                    this.persistData();
+                    this.triggerNotification("Kas masuk berhasil disimpan!", "success");
+                    this.formIn.amount = ''; this.formIn.notes = ''; this.formIn.date = new Date().toISOString().split('T')[0];
+                    if (this.cloudUrl) { this.pushToCloud(); }
+                    this.renderCharts();
+                },
+
+                addKasKeluar() {
+                    const newId = 'KK-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+                    this.kasKeluarList = [...this.kasKeluarList, { id: newId, date: this.formOut.date, category: this.formOut.category, amount: Number(this.formOut.amount), notes: this.formOut.notes }];
+                    this.persistData();
+                    this.triggerNotification("Kas keluar berhasil disimpan!", "success");
+                    this.formOut.amount = ''; this.formOut.notes = ''; this.formOut.date = new Date().toISOString().split('T')[0];
+                    if (this.cloudUrl) { this.pushToCloud(); }
+                    this.renderCharts();
+                },
+
+                addInvoiceItem() {
+                    this.invoiceForm.items = [...this.invoiceForm.items, { description: '', qty: 1, unitPrice: 0 }];
+                },
+
+                removeInvoiceItem(index) {
+                    if (this.invoiceForm.items.length > 1) {
+                        this.invoiceForm.items = this.invoiceForm.items.filter((_, i) => i !== index);
+                    }
+                },
+
+                calculateInvoiceSubtotal() {
+                    return this.invoiceForm.items.reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
+                },
+
+                calculateInvoiceFinalTotal() {
+                    const subtotal = this.calculateInvoiceSubtotal();
+                    const discount = Number(this.invoiceForm.discount || 0);
+                    return Math.max(0, subtotal - discount);
+                },
+
+                calculateInvoiceRemaining() {
+                    const finalTotal = this.calculateInvoiceFinalTotal();
+                    const payments = Number(this.invoiceForm.dp1 || 0) + Number(this.invoiceForm.dp2 || 0) + Number(this.invoiceForm.pelunasan || 0);
+                    return Math.max(0, finalTotal - payments);
+                },
+
+                resetInvoiceForm() {
+                    this.invoiceForm = {
+                        id: '',
+                        invoiceNo: '',
+                        date: new Date().toISOString().split('T')[0],
+                        customerName: '',
+                        customerAddress: '',
+                        items: [{ description: '', qty: 1, unitPrice: 0 }],
+                        discount: 0,
+                        dp1: 0,
+                        dp2: 0,
+                        pelunasan: 0,
+                        paymentMethod: 'Cash'
+                    };
+                    this.generateNextInvoiceNumber();
+                },
+
+                saveInvoice() {
+                    if (!this.invoiceForm.customerName || !this.invoiceForm.customerAddress) {
+                        this.triggerNotification("Harap lengkapi entitas pelanggan & alamat.", "error");
+                        return;
+                    }
+
+                    const finalTotal = this.calculateInvoiceFinalTotal();
+                    const isNew = !this.invoiceForm.id;
+                    const invoiceId = isNew ? 'INV-' + Date.now() : this.invoiceForm.id;
+
+                    const newInvoice = {
+                        id: invoiceId,
+                        invoiceNo: this.invoiceForm.invoiceNo,
+                        date: this.invoiceForm.date,
+                        customerName: this.invoiceForm.customerName,
+                        customerAddress: this.invoiceForm.customerAddress,
+                        items: JSON.parse(JSON.stringify(this.invoiceForm.items)),
+                        discount: Number(this.invoiceForm.discount || 0),
+                        dp1: Number(this.invoiceForm.dp1 || 0),
+                        dp2: Number(this.invoiceForm.dp2 || 0),
+                        pelunasan: Number(this.invoiceForm.pelunasan || 0),
+                        paymentMethod: this.invoiceForm.paymentMethod,
+                        total: finalTotal
+                    };
+
+                    this.kasMasukList = this.kasMasukList.filter(item => !item.id.startsWith('KM-' + invoiceId));
+
+                    // ATURAN AKUMULASI KUMULATIF BERTAHAP
+                    if (newInvoice.pelunasan > 0) {
+                        const totalCumulative = Number(newInvoice.dp1) + Number(newInvoice.dp2) + Number(newInvoice.pelunasan);
+                        this.kasMasukList = [...this.kasMasukList, {
+                            id: 'KM-' + invoiceId + '-PLN',
+                            date: newInvoice.date,
+                            category: 'Pemasukan Lainnya',
+                            amount: totalCumulative,
+                            notes: `Pembayaran Lunas (Kumulatif) Inv ${newInvoice.invoiceNo} - ${newInvoice.customerName}`
+                        }];
+                    } else if (newInvoice.dp2 > 0) {
+                        const totalCumulative = Number(newInvoice.dp1) + Number(newInvoice.dp2);
+                        this.kasMasukList = [...this.kasMasukList, {
+                            id: 'KM-' + invoiceId + '-DP2',
+                            date: newInvoice.date,
+                            category: 'Pemasukan Lainnya',
+                            amount: totalCumulative,
+                            notes: `Termin DP 1 & 2 Inv ${newInvoice.invoiceNo} - ${newInvoice.customerName}`
+                        }];
+                    } else if (newInvoice.dp1 > 0) {
+                        this.kasMasukList = [...this.kasMasukList, {
+                            id: 'KM-' + invoiceId + '-DP1',
+                            date: newInvoice.date,
+                            category: 'Pemasukan Lainnya',
+                            amount: Number(newInvoice.dp1),
+                            notes: `Termin DP 1 Inv ${newInvoice.invoiceNo} - ${newInvoice.customerName}`
+                        }];
+                    }
+
+                    if (isNew) {
+                        this.invoiceList = [...this.invoiceList, newInvoice];
+                    } else {
+                        this.invoiceList = this.invoiceList.map(inv => inv.id === invoiceId ? newInvoice : inv);
+                    }
+
+                    this.persistData();
+                    this.triggerNotification(`Invoice ${newInvoice.invoiceNo} berhasil diamankan!`, "success");
+                    this.resetInvoiceForm();
+                    this.currentTab = 'riwayat-invoice';
+                    if (this.cloudUrl) { this.pushToCloud(); }
+                    this.renderCharts();
+                },
+
+                loadInvoiceForPrint(invoice) {
+                    this.invoiceForm = JSON.parse(JSON.stringify(invoice));
+                    this.currentTab = 'invoice-baru';
+                    this.triggerNotification("Dokumen invoice dimuat di Editor.", "info");
+                },
+
+                saveCloudUrl() {
+                    localStorage.setItem('cloud_url_arus', this.cloudUrl);
+                    this.triggerNotification("Koneksi cloud Google Sheets berhasil didaftarkan!", "success");
+                    this.pullFromCloud();
+                },
+
+                pullFromCloud() {
+                    if (!this.cloudUrl) return;
+                    this.triggerNotification("Menghubungkan ke Google Sheets...", "info");
+                    
+                    fetch(this.cloudUrl + '?action=get')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data) {
+                                if (data.kasMasukList) this.kasMasukList = data.kasMasukList;
+                                if (data.kasKeluarList) this.kasKeluarList = data.kasKeluarList;
+                                if (data.invoiceList) this.invoiceList = data.invoiceList;
+                                if (data.rekeningList) this.rekeningList = data.rekeningList;
+                                
+                                this.selfHealingDB();
+                                this.persistData();
+                                this.renderCharts();
+                                this.triggerNotification("Sinkronisasi Cloud Google Sheets Selesai!", "success");
+                            }
+                        })
+                        .catch(err => {
+                            this.triggerNotification("Gagal terhubung. Menggunakan memori internal.", "error");
+                            console.error(err);
+                        });
+                },
+
+                pushToCloud() {
+                    if (!this.cloudUrl) return;
+
+                    const payload = {
+                        kasMasukList: this.kasMasukList,
+                        kasKeluarList: this.kasKeluarList,
+                        invoiceList: this.invoiceList,
+                        rekeningList: this.rekeningList
+                    };
+
+                    fetch(this.cloudUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(() => {
+                        this.triggerNotification("Cloud terupdate otomatis!", "success");
+                    })
+                    .catch(err => {
+                        this.triggerNotification("Sinkronisasi cloud tertunda.", "error");
+                        console.error(err);
+                    });
+                },
+
+                renderCharts() {
+                    if (this.currentTab !== 'dashboard') return;
+
+                    const ctxLine = document.getElementById('mainChart');
+                    const ctxDoughnut = document.getElementById('categoryChart');
+
+                    if (!ctxLine || !ctxDoughnut) return;
+
+                    this.destroyCharts();
+
+                    let labels = [];
+                    let incomeData = [];
+                    let expenseData = [];
+
+                    if (this.analyticsPeriod === 'yearly') {
+                        // 12 Months of selected year
+                        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+                        incomeData = Array(12).fill(0);
+                        expenseData = Array(12).fill(0);
+
+                        this.kasMasukList.forEach(item => {
+                            if (item && item.date) {
+                                const d = new Date(item.date);
+                                if (d.getFullYear() === Number(this.analyticsYear)) {
+                                    incomeData[d.getMonth()] += item.amount;
+                                }
+                            }
+                        });
+                        this.kasKeluarList.forEach(item => {
+                            if (item && item.date) {
+                                const d = new Date(item.date);
+                                if (d.getFullYear() === Number(this.analyticsYear)) {
+                                    expenseData[d.getMonth()] += item.amount;
+                                }
+                            }
+                        });
+                    } else {
+                        // Days of selected month (1-31)
+                        const daysInMonth = new Date(this.analyticsYear, Number(this.analyticsMonth) + 1, 0).getDate();
+                        labels = Array.from({length: daysInMonth}, (_, i) => String(i + 1));
+                        incomeData = Array(daysInMonth).fill(0);
+                        expenseData = Array(daysInMonth).fill(0);
+
+                        this.kasMasukList.forEach(item => {
+                            if (item && item.date) {
+                                const d = new Date(item.date);
+                                if (d.getFullYear() === Number(this.analyticsYear) && d.getMonth() === Number(this.analyticsMonth)) {
+                                    const dateIndex = d.getDate() - 1;
+                                    if (dateIndex >= 0 && dateIndex < daysInMonth) {
+                                        incomeData[dateIndex] += item.amount;
+                                    }
+                                }
+                            }
+                        });
+                        this.kasKeluarList.forEach(item => {
+                            if (item && item.date) {
+                                const d = new Date(item.date);
+                                if (d.getFullYear() === Number(this.analyticsYear) && d.getMonth() === Number(this.analyticsMonth)) {
+                                    const dateIndex = d.getDate() - 1;
+                                    if (dateIndex >= 0 && dateIndex < daysInMonth) {
+                                        expenseData[dateIndex] += item.amount;
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+                    Chart.defaults.color = '#64748b';
+
+                    this.mainChartInstance = new Chart(ctxLine, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Kas Masuk',
+                                    data: incomeData,
+                                    borderColor: '#6366f1',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                                    borderWidth: 3,
+                                    pointBackgroundColor: '#ffffff',
+                                    pointBorderColor: '#6366f1',
+                                    pointBorderWidth: 2,
+                                    pointRadius: 3,
+                                    tension: 0.35,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Kas Keluar',
+                                    data: expenseData,
+                                    borderColor: '#f43f5e',
+                                    backgroundColor: 'rgba(244, 63, 94, 0.03)',
+                                    borderWidth: 3,
+                                    pointBackgroundColor: '#ffffff',
+                                    pointBorderColor: '#f43f5e',
+                                    pointBorderWidth: 2,
+                                    pointRadius: 3,
+                                    tension: 0.35,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#0f172a',
+                                    padding: 12,
+                                    cornerRadius: 8,
+                                    titleFont: { size: 12, family: 'Plus Jakarta Sans' },
+                                    bodyFont: { size: 13, weight: 'bold', family: 'Plus Jakarta Sans' },
+                                    callbacks: { label: function(context) { return 'Rp ' + context.parsed.y.toLocaleString('id-ID'); } }
+                                }
+                            },
+                            scales: {
+                                y: { grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { callback: value => (value / 1000000) + 'Jt', font: { size: 10, weight: '600' } } },
+                                x: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' } } }
+                            }
+                        }
+                    });
+
+                    let kusenTotal = 0; let batuTotal = 0;
+                    this.kasMasukList.forEach(item => {
+                        if (item) {
+                            if (item.category === 'Penjualan Kusen') kusenTotal += item.amount;
+                            if (item.category === 'Penjualan Batu') batuTotal += item.amount;
+                        }
+                    });
+
+                    if (kusenTotal === 0 && batuTotal === 0) { kusenTotal = 60; batuTotal = 40; }
+
+                    this.categoryChartInstance = new Chart(ctxDoughnut, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Kusen', 'Batu Alam'],
+                            datasets: [{
+                                data: [kusenTotal, batuTotal],
+                                backgroundColor: ['#6366f1', '#10b981'],
+                                borderWidth: 0,
+                                hoverOffset: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { backgroundColor: '#0f172a', bodyFont: { size: 12, weight: 'bold', family: 'Plus Jakarta Sans' } }
+                            },
+                            cutout: '75%'
+                        }
+                    });
+                }
+            };
+        }
+    </script>
+</body>
+</html>
