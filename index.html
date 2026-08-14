@@ -823,7 +823,7 @@
                             </div>
 
                             <!-- Form Input Mutasi -->
-                            <form @submit.prevent="addTransaksiHutang()" class="flex flex-col sm:flex-row items-end gap-3 mb-6 bg-orange-50/50 border border-orange-100 p-4 rounded-xl">
+                            <form @submit.prevent="addTransaksiHutang()" class="flex flex-col sm:flex-row items-end gap-3 mb-6 bg-orange-50/50 border border-orange-100 p-4 rounded-xl transition-colors" :class="isEditingMutasi ? 'ring-2 ring-orange-400 bg-orange-100/50' : ''">
                                 <div class="w-full sm:w-auto">
                                     <label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Tanggal</label>
                                     <input type="date" x-model="formMutasi.date" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:border-orange-500 outline-none text-xs font-semibold text-slate-700">
@@ -843,9 +843,16 @@
                                     <label class="block text-[9px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Nominal (Rp)</label>
                                     <input type="number" x-model.number="formMutasi.amount" placeholder="0" required min="1" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:border-orange-500 outline-none text-xs font-black text-slate-900">
                                 </div>
-                                <button type="submit" class="w-full sm:w-auto px-5 py-2 h-[34px] bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold shadow-md shadow-orange-500/30 active:scale-95 transition-all mt-3 sm:mt-0">
-                                    Catat
-                                </button>
+                                <div class="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+                                    <button type="submit" class="flex-1 sm:flex-none px-5 py-2 h-[34px] bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold shadow-md shadow-orange-500/30 active:scale-95 transition-all">
+                                        <span x-text="isEditingMutasi ? 'Update' : 'Catat'"></span>
+                                    </button>
+                                    <template x-if="isEditingMutasi">
+                                        <button type="button" @click="cancelEditMutasi()" class="flex-1 sm:flex-none px-4 py-2 h-[34px] bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold active:scale-95 transition-all">
+                                            Batal
+                                        </button>
+                                    </template>
+                                </div>
                             </form>
 
                             <!-- Table Mutasi (Mirip Excel) -->
@@ -858,12 +865,12 @@
                                             <th class="py-3 px-4 text-right w-36 text-rose-600">Bon (Debit)</th>
                                             <th class="py-3 px-4 text-right w-36 text-emerald-600">Bayar (Kredit)</th>
                                             <th class="py-3 px-4 text-right w-36 text-slate-800">Sisa Akhir</th>
-                                            <th class="py-3 px-2 text-center w-10"></th>
+                                            <th class="py-3 px-2 text-center w-16">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="text-xs divide-y divide-slate-200">
                                         <template x-for="mutasi in getLedgerList()" :key="mutasi.id">
-                                            <tr class="hover:bg-slate-50/50 transition-colors divide-x divide-slate-100 group">
+                                            <tr class="hover:bg-slate-50/50 transition-colors divide-x divide-slate-100 group" :class="editingMutasiId === mutasi.id ? 'bg-orange-50/40' : ''">
                                                 <td class="py-2.5 px-4 font-semibold text-slate-500 whitespace-nowrap" x-text="formatDate(mutasi.date)"></td>
                                                 <td class="py-2.5 px-4 font-bold text-slate-800" x-text="mutasi.uraian"></td>
                                                 
@@ -886,11 +893,16 @@
                                                     <span x-text="formatRupiah(mutasi.sisa).replace('Rp', 'Rp ')"></span>
                                                 </td>
 
-                                                <!-- Aksi Hapus -->
+                                                <!-- Aksi Edit & Hapus -->
                                                 <td class="py-2.5 px-2 text-center">
-                                                    <button @click="triggerConfirmDelete('mutasi', mutasi.id)" class="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
-                                                        <i class="fa-solid fa-xmark"></i>
-                                                    </button>
+                                                    <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button @click="editMutasi(mutasi)" type="button" class="text-slate-300 hover:text-blue-500 transition-colors" title="Edit Baris Ini">
+                                                            <i class="fa-solid fa-pen text-[10px]"></i>
+                                                        </button>
+                                                        <button @click="triggerConfirmDelete('mutasi', mutasi.id)" type="button" class="text-slate-300 hover:text-rose-500 transition-colors" title="Hapus">
+                                                            <i class="fa-solid fa-xmark text-sm"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </template>
@@ -1432,6 +1444,8 @@
                 showAddKontakModal: false,
                 formKontak: { name: '', type: 'HUTANG' },
                 formMutasi: { date: new Date().toISOString().split('T')[0], uraian: '', type: 'DEBIT', amount: '' },
+                isEditingMutasi: false,
+                editingMutasiId: null,
 
                 rekeningForm: { id: '', name: '', type: 'Bank', balance: '' },
                 isEditingRekening: false,
@@ -1691,21 +1705,57 @@
 
                 addTransaksiHutang() {
                     if(!this.selectedKontakId || !this.formMutasi.uraian || !this.formMutasi.amount) return;
-                    this.transaksiHutang.push({
-                        id: 'MUTASI-' + Date.now(),
-                        kontakId: this.selectedKontakId,
-                        date: this.formMutasi.date,
-                        uraian: this.formMutasi.uraian,
-                        type: this.formMutasi.type, // DEBIT atau CREDIT
-                        amount: Number(this.formMutasi.amount)
-                    });
                     
-                    // Reset form tapi biarkan tanggal dan jenis tetap
+                    if (this.isEditingMutasi && this.editingMutasiId) {
+                        // Memperbarui data yang sudah ada (Edit)
+                        const index = this.transaksiHutang.findIndex(t => t.id === this.editingMutasiId);
+                        if (index !== -1) {
+                            this.transaksiHutang[index].date = this.formMutasi.date;
+                            this.transaksiHutang[index].uraian = this.formMutasi.uraian;
+                            this.transaksiHutang[index].type = this.formMutasi.type;
+                            this.transaksiHutang[index].amount = Number(this.formMutasi.amount);
+                        }
+                        this.triggerNotification("Catatan mutasi berhasil diperbarui!", "success");
+                    } else {
+                        // Mencatat mutasi bon/bayar baru
+                        this.transaksiHutang.push({
+                            id: 'MUTASI-' + Date.now(),
+                            kontakId: this.selectedKontakId,
+                            date: this.formMutasi.date,
+                            uraian: this.formMutasi.uraian,
+                            type: this.formMutasi.type, // DEBIT atau CREDIT
+                            amount: Number(this.formMutasi.amount)
+                        });
+                        this.triggerNotification("Mutasi dicatat!", "success");
+                    }
+                    
+                    // Reset form tapi biarkan tanggal dan jenis tetap untuk mempermudah entri cepat
                     this.formMutasi.uraian = '';
                     this.formMutasi.amount = '';
+                    this.isEditingMutasi = false;
+                    this.editingMutasiId = null;
                     
-                    this.persistData(); this.triggerNotification("Mutasi dicatat!", "success");
+                    this.persistData();
                     if (this.cloudUrl) { this.pushToCloud(); }
+                },
+
+                editMutasi(mutasi) {
+                    this.isEditingMutasi = true;
+                    this.editingMutasiId = mutasi.id;
+                    // Salin data dari baris ke dalam form input
+                    this.formMutasi = {
+                        date: mutasi.date,
+                        uraian: mutasi.uraian,
+                        type: mutasi.type,
+                        amount: mutasi.amount
+                    };
+                },
+
+                cancelEditMutasi() {
+                    this.isEditingMutasi = false;
+                    this.editingMutasiId = null;
+                    this.formMutasi.uraian = '';
+                    this.formMutasi.amount = '';
                 },
 
                 getLedgerList() {
