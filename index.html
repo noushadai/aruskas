@@ -1578,16 +1578,8 @@
                     localStorage.setItem('kasKeluarList_arus', JSON.stringify(this.kasKeluarList));
                     localStorage.setItem('invoiceList_arus', JSON.stringify(this.invoiceList));
                     localStorage.setItem('rekeningList_arus', JSON.stringify(this.rekeningList));
-                    
                     localStorage.setItem('bukuKontak_arus', JSON.stringify(this.bukuKontak));
                     localStorage.setItem('transaksiHutang_arus', JSON.stringify(this.transaksiHutang));
-                },
-
-                persistData() {
-                    localStorage.setItem('kasMasukList_arus', JSON.stringify(this.kasMasukList));
-                    localStorage.setItem('kasKeluarList_arus', JSON.stringify(this.kasKeluarList));
-                    localStorage.setItem('invoiceList_arus', JSON.stringify(this.invoiceList));
-                    localStorage.setItem('rekeningList_arus', JSON.stringify(this.rekeningList));
                 },
 
                 triggerNotification(message, type = 'info') {
@@ -1832,38 +1824,6 @@
 
                 saveCloudUrl() { localStorage.setItem('cloud_url_arus', this.cloudUrl); this.triggerNotification("Koneksi cloud disimpan!", "success"); this.pullFromCloud(); },
                 
-                // Tambahan: Ekspor Gambar
-                downloadInvoiceImage() {
-                    const invoiceElement = document.getElementById('invoice-print-area');
-                    if (!invoiceElement) return;
-
-                    // Menggunakan notifikasi loading agar pengguna tahu proses sedang berjalan
-                    this.triggerNotification("Mengekspor gambar invoice...", "info");
-
-                    html2canvas(invoiceElement, {
-                        scale: 2, // Resolusi 2x lipat agar tidak pecah saat dikirim
-                        useCORS: true, // Membantu memuat gambar eksternal seperti logo
-                        backgroundColor: "#ffffff", // Pastikan background putih
-                    }).then(canvas => {
-                        const imgData = canvas.toDataURL('image/png');
-                        const link = document.createElement('a');
-                        
-                        // Nama file menggunakan format InvoiceNo_NamaPelanggan.png
-                        const rawInvNo = this.invoiceForm.invoiceNo || 'INV';
-                        const safeInvNo = rawInvNo.replace(/\//g, '-');
-                        const custName = this.invoiceForm.customerName || 'Pelanggan';
-                        link.download = `${safeInvNo}_${custName}.png`;
-                        
-                        link.href = imgData;
-                        link.click();
-                        
-                        this.triggerNotification("Gambar Invoice berhasil di-download! Silakan bagikan ke WhatsApp.", "success");
-                    }).catch(err => {
-                        console.error(err);
-                        this.triggerNotification("Gagal mengekspor gambar. Pastikan perangkat Anda mendukung.", "error");
-                    });
-                },
-
                 pullFromCloud() {
                     if (!this.cloudUrl) return;
                     this.triggerNotification("Sinkronisasi data...", "info");
@@ -1882,6 +1842,7 @@
                             }
                         }).catch(e => { this.triggerNotification("Gagal terhubung ke Cloud.", "error"); });
                 },
+
                 pushToCloud() {
                     if (!this.cloudUrl) return;
                     fetch(this.cloudUrl, {
