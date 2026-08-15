@@ -1872,6 +1872,39 @@
                     this.triggerNotification("Dokumen dimuat di Editor Kasir.", "info");
                 },
 
+                downloadInvoiceImage() {
+                    const printArea = document.getElementById('invoice-print-area');
+                    if (!printArea) {
+                        this.triggerNotification("Area invoice tidak ditemukan.", "error");
+                        return;
+                    }
+                    
+                    this.triggerNotification("Sedang memproses gambar...", "info");
+                    
+                    // Menggunakan html2canvas untuk memotret tagihan
+                    html2canvas(printArea, {
+                        scale: 2, 
+                        useCORS: true, // Sangat penting agar logo gambar tidak membuat render gagal (CORS error)
+                        backgroundColor: "#ffffff"
+                    }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        
+                        // Penamaan file otomatis (mengganti garis miring dan spasi)
+                        const invNo = (this.invoiceForm.invoiceNo || 'INV').replace(/\//g, '-');
+                        const custName = (this.invoiceForm.customerName || 'Pelanggan').replace(/\s+/g, '_');
+                        link.download = `Invoice_${invNo}_${custName}.png`;
+                        
+                        link.href = imgData;
+                        link.click();
+                        
+                        this.triggerNotification("Gambar invoice berhasil disimpan!", "success");
+                    }).catch(error => {
+                        console.error("Error html2canvas:", error);
+                        this.triggerNotification("Gagal memproses gambar invoice.", "error");
+                    });
+                },
+
                 saveCloudUrl() { localStorage.setItem('cloud_url_arus', this.cloudUrl); this.triggerNotification("Koneksi cloud disimpan!", "success"); this.pullFromCloud(); },
                 
                 pullFromCloud() {
