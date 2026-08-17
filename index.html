@@ -439,7 +439,7 @@
                         <div class="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center text-lg mb-3">
                             <i class="fa-solid fa-wallet"></i>
                         </div>
-                        <h4 class="font-extrabold text-slate-900 text-xl">Input Kas Masuk</h4>
+                        <h4 class="font-extrabold text-slate-900 text-xl" x-text="isEditingIn ? 'Edit Kas Masuk' : 'Input Kas Masuk'"></h4>
                         <p class="text-xs text-slate-500 font-medium mt-1">Catat penerimaan dana operasional.</p>
                     </div>
 
@@ -464,9 +464,16 @@
                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Keterangan</label>
                             <textarea x-model="formIn.notes" placeholder="Tulis rincian..." rows="3" class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium text-slate-700 resize-none"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/30 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-check"></i> Simpan Pemasukan
-                        </button>
+                        <div class="flex gap-3">
+                            <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/30 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check"></i> <span x-text="isEditingIn ? 'Update Pemasukan' : 'Simpan Pemasukan'"></span>
+                            </button>
+                            <template x-if="isEditingIn">
+                                <button type="button" @click="cancelEditIn()" class="px-4 py-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl active:scale-95 transition-colors">
+                                    Batal
+                                </button>
+                            </template>
+                        </div>
                     </form>
                 </div>
 
@@ -510,9 +517,14 @@
                                         <td class="py-4 px-5 text-slate-600 font-medium" x-text="item.notes || '-'"></td>
                                         <td class="py-4 px-5 text-right font-extrabold text-emerald-600" x-text="formatRupiah(item.amount)"></td>
                                         <td class="py-4 px-5 text-center">
-                                            <button @click="triggerConfirmDelete('in', item.id)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center mx-auto active:scale-95">
-                                                <i class="fa-regular fa-trash-can text-sm"></i>
-                                            </button>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <button @click="editKasMasuk(item)" type="button" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center active:scale-95" title="Edit">
+                                                    <i class="fa-solid fa-pen text-[11px]"></i>
+                                                </button>
+                                                <button @click="triggerConfirmDelete('in', item.id)" type="button" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center active:scale-95" title="Hapus">
+                                                    <i class="fa-regular fa-trash-can text-sm"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </template>
@@ -538,7 +550,7 @@
                         <div class="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center text-lg mb-3">
                             <i class="fa-solid fa-money-bill-transfer"></i>
                         </div>
-                        <h4 class="font-extrabold text-slate-900 text-xl">Input Kas Keluar</h4>
+                        <h4 class="font-extrabold text-slate-900 text-xl" x-text="isEditingOut ? 'Edit Kas Keluar' : 'Input Kas Keluar'"></h4>
                         <p class="text-xs text-slate-500 font-medium mt-1">Catat pengeluaran dana operasional.</p>
                     </div>
 
@@ -553,6 +565,7 @@
                                 <option value="Pengeluaran Kusen">Pengeluaran Kusen</option>
                                 <option value="Pengeluaran Batu">Pengeluaran Batu</option>
                                 <option value="Pengeluaran Lainnya">Pengeluaran Lainnya</option>
+                                <option value="Pengeluaran Kasbon">Pengeluaran Kasbon</option>
                             </select>
                         </div>
                         <div>
@@ -563,9 +576,16 @@
                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Keterangan</label>
                             <textarea x-model="formOut.notes" placeholder="Tulis rincian..." rows="3" class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm font-medium text-slate-700 resize-none"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-rose-500/30 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-check"></i> Simpan Pengeluaran
-                        </button>
+                        <div class="flex gap-3">
+                            <button type="submit" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-rose-500/30 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check"></i> <span x-text="isEditingOut ? 'Update Pengeluaran' : 'Simpan Pengeluaran'"></span>
+                            </button>
+                            <template x-if="isEditingOut">
+                                <button type="button" @click="cancelEditOut()" class="px-4 py-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl active:scale-95 transition-colors">
+                                    Batal
+                                </button>
+                            </template>
+                        </div>
                     </form>
                 </div>
 
@@ -609,9 +629,14 @@
                                         <td class="py-4 px-5 text-slate-600 font-medium" x-text="item.notes || '-'"></td>
                                         <td class="py-4 px-5 text-right font-extrabold text-rose-600" x-text="formatRupiah(item.amount)"></td>
                                         <td class="py-4 px-5 text-center">
-                                            <button @click="triggerConfirmDelete('out', item.id)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center mx-auto active:scale-95">
-                                                <i class="fa-regular fa-trash-can text-sm"></i>
-                                            </button>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <button @click="editKasKeluar(item)" type="button" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center active:scale-95" title="Edit">
+                                                    <i class="fa-solid fa-pen text-[11px]"></i>
+                                                </button>
+                                                <button @click="triggerConfirmDelete('out', item.id)" type="button" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center active:scale-95" title="Hapus">
+                                                    <i class="fa-regular fa-trash-can text-sm"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </template>
@@ -1424,6 +1449,12 @@
                 invoiceSearchQuery: '',
                 cloudUrl: '',
 
+                // State Variable Editing Kas
+                isEditingIn: false,
+                editingInId: null,
+                isEditingOut: false,
+                editingOutId: null,
+
                 analyticsPeriod: 'yearly', 
                 analyticsMonth: new Date().getMonth(), 
                 analyticsYear: new Date().getFullYear(),
@@ -1643,14 +1674,16 @@
                 },
 
                 getFilteredKasMasuk() {
-                    if(!this.searchIn) return this.kasMasukList.slice().reverse();
+                    let sortedList = this.kasMasukList.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+                    if(!this.searchIn) return sortedList;
                     const q = this.searchIn.toLowerCase();
-                    return this.kasMasukList.filter(i => (i.notes || '').toLowerCase().includes(q) || i.category.toLowerCase().includes(q)).reverse();
+                    return sortedList.filter(i => (i.notes || '').toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
                 },
                 getFilteredKasKeluar() {
-                    if(!this.searchOut) return this.kasKeluarList.slice().reverse();
+                    let sortedList = this.kasKeluarList.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+                    if(!this.searchOut) return sortedList;
                     const q = this.searchOut.toLowerCase();
-                    return this.kasKeluarList.filter(i => (i.notes || '').toLowerCase().includes(q) || i.category.toLowerCase().includes(q)).reverse();
+                    return sortedList.filter(i => (i.notes || '').toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
                 },
                 getFilteredInvoices() {
                     if (!this.invoiceSearchQuery) return this.invoiceList.slice().reverse();
@@ -1798,16 +1831,57 @@
                 resetRekeningForm() { this.isEditingRekening = false; this.rekeningForm = { id: '', name: '', type: 'Bank', balance: '' }; },
 
                 addKasMasuk() {
-                    this.kasMasukList.push({ id: 'KM-' + Date.now(), date: this.formIn.date, category: this.formIn.category, amount: Number(this.formIn.amount), notes: this.formIn.notes });
-                    this.persistData(); this.triggerNotification("Kas masuk disimpan!", "success");
-                    this.formIn = { date: new Date().toISOString().split('T')[0], category: 'Penjualan Kusen', amount: '', notes: '' };
+                    if (this.isEditingIn && this.editingInId) {
+                        const index = this.kasMasukList.findIndex(i => i.id === this.editingInId);
+                        if (index !== -1) {
+                            this.kasMasukList[index] = { ...this.kasMasukList[index], date: this.formIn.date, category: this.formIn.category, amount: Number(this.formIn.amount), notes: this.formIn.notes };
+                        }
+                        this.triggerNotification("Kas masuk berhasil diupdate!", "success");
+                    } else {
+                        this.kasMasukList.push({ id: 'KM-' + Date.now(), date: this.formIn.date, category: this.formIn.category, amount: Number(this.formIn.amount), notes: this.formIn.notes });
+                        this.triggerNotification("Kas masuk disimpan!", "success");
+                    }
+                    this.persistData(); 
+                    this.cancelEditIn();
                     if (this.cloudUrl) { this.pushToCloud(); } this.renderCharts();
                 },
+                editKasMasuk(item) {
+                    this.isEditingIn = true;
+                    this.editingInId = item.id;
+                    this.formIn = { date: item.date, category: item.category, amount: item.amount, notes: item.notes };
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                cancelEditIn() {
+                    this.isEditingIn = false;
+                    this.editingInId = null;
+                    this.formIn = { date: new Date().toISOString().split('T')[0], category: 'Penjualan Kusen', amount: '', notes: '' };
+                },
+
                 addKasKeluar() {
-                    this.kasKeluarList.push({ id: 'KK-' + Date.now(), date: this.formOut.date, category: this.formOut.category, amount: Number(this.formOut.amount), notes: this.formOut.notes });
-                    this.persistData(); this.triggerNotification("Kas keluar disimpan!", "success");
-                    this.formOut = { date: new Date().toISOString().split('T')[0], category: 'Pengeluaran Kusen', amount: '', notes: '' };
+                    if (this.isEditingOut && this.editingOutId) {
+                        const index = this.kasKeluarList.findIndex(i => i.id === this.editingOutId);
+                        if (index !== -1) {
+                            this.kasKeluarList[index] = { ...this.kasKeluarList[index], date: this.formOut.date, category: this.formOut.category, amount: Number(this.formOut.amount), notes: this.formOut.notes };
+                        }
+                        this.triggerNotification("Kas keluar berhasil diupdate!", "success");
+                    } else {
+                        this.kasKeluarList.push({ id: 'KK-' + Date.now(), date: this.formOut.date, category: this.formOut.category, amount: Number(this.formOut.amount), notes: this.formOut.notes });
+                        this.triggerNotification("Kas keluar disimpan!", "success");
+                    }
+                    this.persistData(); 
+                    this.cancelEditOut();
                     if (this.cloudUrl) { this.pushToCloud(); } this.renderCharts();
+                },
+                editKasKeluar(item) {
+                    this.isEditingOut = true;
+                    this.editingOutId = item.id;
+                    this.formOut = { date: item.date, category: item.category, amount: item.amount, notes: item.notes };
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                cancelEditOut() {
+                    this.isEditingOut = false;
+                    this.editingOutId = null;
+                    this.formOut = { date: new Date().toISOString().split('T')[0], category: 'Pengeluaran Kusen', amount: '', notes: '' };
                 },
 
                 generateNextInvoiceNumber() {
