@@ -766,14 +766,14 @@
                     <div class="bg-white p-6 rounded-[24px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-100">
                         <div class="flex items-center justify-between mb-5">
                             <h4 class="font-extrabold text-slate-900 text-lg">Buku Pemasok</h4>
-                            <button @click="showAddKontakModal = true" class="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center hover:bg-orange-100 transition-colors active:scale-95">
+                            <button @click="showAddKontakModal = true; isEditingKontak = false; formKontak = {name: '', type: 'HUTANG'}; editingKontakId = null" class="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center hover:bg-orange-100 transition-colors active:scale-95">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                         </div>
 
                         <!-- Form Tambah Kontak (Inline Toggle) -->
                         <div x-show="showAddKontakModal" x-transition class="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-5">
-                            <h5 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Buat Entri Baru</h5>
+                            <h5 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3" x-text="isEditingKontak ? 'Edit Pemasok' : 'Buat Entri Baru'"></h5>
                             <form @submit.prevent="addKontak()" class="space-y-3">
                                 <div>
                                     <input type="text" x-model="formKontak.name" placeholder="Nama Pemasok / Pabrik..." required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:border-orange-500 outline-none text-xs font-semibold text-slate-700">
@@ -785,8 +785,8 @@
                                     </select>
                                 </div>
                                 <div class="flex gap-2 pt-1">
-                                    <button type="submit" class="flex-1 bg-orange-500 text-white text-[10px] font-bold py-2 rounded-lg hover:bg-orange-400 transition-colors">Simpan</button>
-                                    <button type="button" @click="showAddKontakModal = false" class="flex-1 bg-slate-200 text-slate-600 text-[10px] font-bold py-2 rounded-lg hover:bg-slate-300 transition-colors">Batal</button>
+                                    <button type="submit" class="flex-1 bg-orange-500 text-white text-[10px] font-bold py-2 rounded-lg hover:bg-orange-400 transition-colors"><span x-text="isEditingKontak ? 'Update' : 'Simpan'"></span></button>
+                                    <button type="button" @click="cancelEditKontak()" class="flex-1 bg-slate-200 text-slate-600 text-[10px] font-bold py-2 rounded-lg hover:bg-slate-300 transition-colors">Batal</button>
                                 </div>
                             </form>
                         </div>
@@ -815,9 +815,14 @@
                                         <span class="text-sm font-black" :class="getSisaMutasi(kontak.id) > 0 ? 'text-slate-900' : 'text-emerald-600'" x-text="formatRupiah(getSisaMutasi(kontak.id))"></span>
                                     </div>
                                     
-                                    <!-- Hapus Action (Hanya muncul saat dihover jika tidak dipilih) -->
-                                    <div @click.stop="triggerConfirmDelete('kontak', kontak.id)" class="absolute top-4 right-4 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Hapus Kontak">
-                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                    <!-- Aksi Edit & Hapus (Hanya muncul saat dihover) -->
+                                    <div class="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div @click.stop="editKontak(kontak)" class="text-slate-300 hover:text-blue-500" title="Edit Kontak">
+                                            <i class="fa-solid fa-pen text-[11px]"></i>
+                                        </div>
+                                        <div @click.stop="triggerConfirmDelete('kontak', kontak.id)" class="text-slate-300 hover:text-rose-500" title="Hapus Kontak">
+                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                        </div>
                                     </div>
                                 </button>
                             </template>
@@ -1474,6 +1479,8 @@
                 selectedKontakId: null,
                 showAddKontakModal: false,
                 formKontak: { name: '', type: 'HUTANG' },
+                isEditingKontak: false,
+                editingKontakId: null,
                 formMutasi: { date: new Date().toISOString().split('T')[0], uraian: '', type: 'DEBIT', amount: '' },
                 isEditingMutasi: false,
                 editingMutasiId: null,
@@ -1723,13 +1730,40 @@
                 // LOGIKA HUTANG PIUTANG
                 addKontak() {
                     if(!this.formKontak.name) return;
-                    const newId = 'KONTAK-' + Date.now();
-                    this.bukuKontak.push({ id: newId, name: this.formKontak.name, type: this.formKontak.type });
-                    this.selectedKontakId = newId;
-                    this.showAddKontakModal = false;
-                    this.formKontak = { name: '', type: 'HUTANG' };
-                    this.persistData(); this.triggerNotification("Kontak ditambahkan!", "success");
+                    
+                    if (this.isEditingKontak && this.editingKontakId) {
+                        // Memperbarui data yang sudah ada (Edit)
+                        const index = this.bukuKontak.findIndex(k => k.id === this.editingKontakId);
+                        if (index !== -1) {
+                            this.bukuKontak[index].name = this.formKontak.name;
+                            this.bukuKontak[index].type = this.formKontak.type;
+                        }
+                        this.triggerNotification("Data kontak diperbarui!", "success");
+                    } else {
+                        // Menambahkan Kontak Baru
+                        const newId = 'KONTAK-' + Date.now();
+                        this.bukuKontak.push({ id: newId, name: this.formKontak.name, type: this.formKontak.type });
+                        this.selectedKontakId = newId;
+                        this.triggerNotification("Kontak ditambahkan!", "success");
+                    }
+                    
+                    this.cancelEditKontak();
+                    this.persistData(); 
                     if (this.cloudUrl) { this.pushToCloud(); }
+                },
+
+                editKontak(kontak) {
+                    this.isEditingKontak = true;
+                    this.editingKontakId = kontak.id;
+                    this.formKontak = { name: kontak.name, type: kontak.type };
+                    this.showAddKontakModal = true;
+                },
+
+                cancelEditKontak() {
+                    this.isEditingKontak = false;
+                    this.editingKontakId = null;
+                    this.formKontak = { name: '', type: 'HUTANG' };
+                    this.showAddKontakModal = false;
                 },
 
                 getSelectedKontak() {
